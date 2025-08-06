@@ -1,0 +1,42 @@
+<%- include('../partials/admin-header', { title }) %>
+
+<div class="max-w-6xl mx-auto mt-8">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">Daftar Kategori</h1>
+    <a href="/admin/kategori/tambah" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+      + Tambah
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white text-sm border border-gray-200 rounded shadow">
+      <thead class="bg-gray-100 text-gray-700">
+        <tr>
+          <th class="p-2 text-left">Nama</th>
+          <th class="p-2 text-left">Slug</th>
+          <th class="p-2 text-center">Total Produk</th>
+          <th class="p-2 text-right">Total Harga</th>
+          <th class="p-2 text-right">Rata Rate</th>
+          <th class="p-2 text-right">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% categories.forEach(cat => { %>
+          <tr class="border-t hover:bg-gray-50">
+            <td class="p-2"><%= cat.name %></td>
+            <td class="p-2"><%= cat.slug %></td>
+            <td class="p-2 text-center"><%= cat.total_produk %></td>
+            <td class="p-2 text-right">Rp <%= cat.total_harga.toLocaleString('id-ID') %></td>
+            <td class="p-2 text-right"><%= cat.rata_rate %> %</td>
+            <td class="p-2 text-right">
+              <a href="/admin/kategori/edit/<%= cat.id %>" class="text-blue-600 hover:underline mr-3">Edit</a>
+              <a href="/admin/kategori/hapus/<%= cat.id %>" class="text-red-600 hover:underline" onclick="return confirm('Yakin ingin hapus?')">Hapus</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/admin-footer') %>

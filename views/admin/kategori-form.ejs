@@ -1,0 +1,24 @@
+<%- include('../partials/admin-header') %>
+
+<div class="max-w-xl mx-auto mt-10 bg-white p-6 rounded shadow">
+  <h1 class="text-xl font-bold mb-4"><%= category ? 'Edit' : 'Tambah' %> Kategori</h1>
+
+  <form method="POST" action="<%= category ? '/admin/kategori/edit/' + category.id : '/admin/kategori/tambah' %>" class="space-y-4">
+    <div>
+      <label class="block text-sm">Nama Kategori</label>
+      <input type="text" name="name" required value="<%= category?.name || '' %>"
+        class="w-full border px-3 py-2 rounded focus:outline-none focus:ring focus:border-blue-400" />
+    </div>
+    <div>
+      <label class="block text-sm">Slug</label>
+      <input type="text" name="slug" required value="<%= category?.slug || '' %>"
+        class="w-full border px-3 py-2 rounded focus:outline-none focus:ring focus:border-blue-400" />
+    </div>
+
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+      Simpan
+    </button>
+  </form>
+</div>
+
+<%- include('../partials/admin-footer') %>

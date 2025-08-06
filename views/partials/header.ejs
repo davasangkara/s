@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <!-- TailwindCSS & AOS.js -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800 transition-all duration-300" onload="AOS.init()">
+
+<!-- Navbar -->
+<header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300" data-aos="fade-down">
+  <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+    <a href="/" class="text-2xl font-bold text-blue-600 tracking-wide hover:opacity-90 transition duration-300">
+      DigitalConvert
+    </a>
+
+    <!-- Desktop Menu -->
+    <nav class="hidden md:flex space-x-6 items-center text-sm font-medium">
+      <a href="/" class="nav-link">Beranda</a>
+      <a href="/simulasi-gestun" class="nav-link">Simulasi Gestun</a>
+      <a href="/public/simulasi-convert" class="nav-link">Simulasi Convert</a>
+      <a href="/simulasi-voucher" class="nav-link">Simulasi Voucher F&B</a>
+      <a href="/tentang" class="nav-link">Tentang Kami</a>
+      <a href="/admin/login" class="nav-link flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M15 12H3m6-6l-6 6 6 6m9-6a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Login
+      </a>
+
+      <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+        <% categories.forEach(cat => { %>
+          <a href="/kategori/<%= cat.slug %>" class="nav-link"><%= cat.name %></a>
+        <% }) %>
+      <% } %>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <div class="md:hidden">
+      <button id="mobile-menu-btn" class="text-gray-700 focus:outline-none focus:ring">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu"
+       class="transition-all duration-300 ease-in-out transform md:hidden scale-y-0 origin-top hidden px-4 pb-4 space-y-2 bg-white border-t border-gray-100">
+    <a href="/" class="mobile-link">Beranda</a>
+    <a href="/simulasi-gestun" class="mobile-link">Simulasi Gestun</a>
+    <a href="/simulasi-convert" class="mobile-link">Simulasi Convert</a>
+    <a href="/simulasi-voucher" class="mobile-link">Simulasi Voucher F&B</a>
+    <a href="/tentang" class="mobile-link">Tentang Kami</a>
+    <a href="/admin/login" class="mobile-link">Login</a>
+
+    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+      <% categories.forEach(cat => { %>
+        <a href="/kategori/<%= cat.slug %>" class="mobile-link"><%= cat.name %></a>
+      <% }) %>
+    <% } %>
+  </div>
+</header>
+
+<script>
+  const menuBtn = document.getElementById("mobile-menu-btn");
+  const menu = document.getElementById("mobile-menu");
+
+  menuBtn.addEventListener("click", () => {
+    menu.classList.toggle("hidden");
+
+    if (!menu.classList.contains("hidden")) {
+      menu.classList.remove("scale-y-0");
+      menu.classList.add("scale-y-100");
+    } else {
+      menu.classList.remove("scale-y-100");
+      menu.classList.add("scale-y-0");
+    }
+  });
+</script>
+
+<style>
+  .nav-link {
+    @apply text-gray-700 hover:text-blue-600 transition relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-blue-600 hover:after:w-full after:transition-all after:duration-300;
+    position: relative;
+    padding-bottom: 4px;
+  }
+
+  .mobile-link {
+    @apply block text-gray-700 hover:text-blue-600 transition py-2 px-2 rounded-md;
+  }
+</style>
+
+<main class="container mx-auto px-4 py-6">

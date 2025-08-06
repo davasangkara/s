@@ -1,0 +1,50 @@
+<%- include('../partials/admin-header', { title }) %>
+
+<div class="max-w-6xl mx-auto mt-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Manajemen Produk</h1>
+    <a href="/admin/produk/edit/0" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+      + Tambah Produk
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-200 rounded shadow">
+      <thead class="bg-gray-100 text-gray-700 text-sm">
+        <tr>
+          <th class="py-2 px-4 text-left">Nama</th>
+          <th class="py-2 px-4 text-left">Kategori</th>
+          <th class="py-2 px-4 text-left">Harga</th>
+          <th class="py-2 px-4 text-left">Rate (%)</th>
+          <th class="py-2 px-4 text-center">Status</th>
+          <th class="py-2 px-4 text-center">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% products.forEach(prod => { %>
+          <tr class="border-t text-sm hover:bg-gray-50">
+            <td class="py-2 px-4"><%= prod.name %></td>
+            <td class="py-2 px-4"><%= prod.category_name %></td>
+            <td class="py-2 px-4"><%= prod.price_formatted %></td>
+            <td class="py-2 px-4"><%= prod.rate %> %</td>
+            <td class="py-2 px-4 text-center">
+              <% if (prod.is_active) { %>
+                <span class="text-green-600 font-medium">Aktif</span>
+              <% } else { %>
+                <span class="text-red-500 font-medium">Nonaktif</span>
+              <% } %>
+            </td>
+            <td class="py-2 px-4 text-center space-x-2">
+              <a href="/admin/produk/edit/<%= prod.id %>" class="text-blue-600 hover:underline">Edit</a>
+              <form action="/admin/produk/delete/<%= prod.id %>" method="POST" class="inline">
+                <button type="submit" class="text-red-600 hover:underline" onclick="return confirm('Yakin hapus?')">Hapus</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/admin-footer') %>

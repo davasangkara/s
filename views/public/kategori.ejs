@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+
+<section class="py-8">
+  <div class="max-w-6xl mx-auto px-4">
+    <h1 class="text-3xl font-bold mb-2"><%= category.name %></h1>
+    <p class="text-gray-600 mb-6">Berikut adalah daftar produk <%= category.name.toLowerCase() %> yang tersedia.</p>
+
+    <% if (products.length === 0) { %>
+      <div class="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded shadow">
+        Tidak ada produk tersedia di kategori ini.
+      </div>
+    <% } else { %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% products.forEach(prod => { %>
+          <div data-aos="fade-up" class="bg-white rounded-lg shadow hover:shadow-lg transition p-4">
+            <h3 class="text-lg font-bold text-blue-600 mb-2"><%= prod.name %></h3>
+            <p class="text-gray-700 text-sm mb-2"><%= prod.description %></p>
+            <p class="text-sm font-medium text-indigo-700">Rate: <%= (prod.rate * 100).toFixed(2) %>%</p>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
