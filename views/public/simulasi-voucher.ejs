@@ -1,0 +1,364 @@
+<%- include('../partials/header') %>
+
+<section class="relative overflow-hidden">
+  <div
+    class="absolute inset-0 bg-gradient-to-b from-[#F5F8FF] via-white to-[#FFF6FB]"
+  ></div>
+
+  <div class="relative container mx-auto max-w-5xl px-6 py-10">
+    <div class="mb-8">
+      <h1
+        class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900"
+      >
+        Simulasi Voucher (F&B + Game)
+      </h1>
+      <p class="text-slate-600 mt-1">
+        Pilih tipe & brand, isi beberapa baris nominal sekaligus.
+        <br class="hidden sm:block" />
+        Harga bayar dihitung:
+        <span class="font-semibold">Nominal × (1 − rate%)</span>.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-6">
+      <!-- Tabs -->
+      <div class="flex items-center gap-2 mb-5">
+        <button
+          id="tabFNB"
+          class="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-semibold"
+        >
+          F&B
+        </button>
+        <button id="tabGAME" class="px-4 py-2 rounded-xl hover:bg-slate-50">
+          Game
+        </button>
+        <div class="ml-auto flex gap-2">
+          <button
+            id="addRow"
+            type="button"
+            class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+          >
+            + Tambah Baris
+          </button>
+          <button
+            id="clearRows"
+            type="button"
+            class="px-4 py-2 rounded-xl bg-white border hover:bg-slate-50"
+          >
+            Bersihkan
+          </button>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <!-- MULTI ROWS -->
+        <div>
+          <div class="rounded-2xl border overflow-hidden">
+            <div
+              class="hidden md:grid grid-cols-12 gap-0 bg-slate-50 text-slate-600 text-xs px-4 py-3"
+            >
+              <div class="col-span-5">Brand</div>
+              <div class="col-span-3">Nominal (Rp)</div>
+              <div class="col-span-2 text-right">Rate (%)</div>
+              <div class="col-span-2 text-right pr-2">Diterima</div>
+            </div>
+            <div id="rowsBox" class="divide-y">
+              <!-- rows injected by JS -->
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-4">
+            <button
+              id="btnHitung"
+              type="button"
+              class="px-5 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow"
+            >
+              Hitung Total
+            </button>
+            <button
+              id="btnSample"
+              type="button"
+              class="px-5 py-2.5 rounded-xl bg-white border hover:bg-slate-50"
+            >
+              Contoh Isi (2 baris)
+            </button>
+          </div>
+        </div>
+
+        <!-- HASIL -->
+        <div class="rounded-2xl border bg-slate-50 p-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900">Hasil</h3>
+            <span
+              id="activeTypeBadge"
+              class="px-2.5 py-1 rounded-lg text-xs bg-indigo-100 text-indigo-700"
+              >F&B</span
+            >
+          </div>
+
+          <div id="resultItems" class="mt-4 space-y-3 max-h-72 overflow-auto">
+            <!-- item lines injected by JS -->
+          </div>
+
+          <div class="mt-4 grid grid-cols-3 gap-3">
+            <div class="p-4 rounded-xl bg-white border">
+              <div class="text-xs text-slate-500">Total Nominal</div>
+              <div id="outTotalNom" class="text-base font-semibold">Rp 0</div>
+            </div>
+            <div class="p-4 rounded-xl bg-white border">
+              <div class="text-xs text-slate-500">Total Potongan</div>
+              <div id="outTotalPot" class="text-base font-semibold">Rp 0</div>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border">
+              <div class="text-xs text-emerald-700">Total diterima</div>
+              <div
+                id="outTotalPay"
+                class="text-xl font-extrabold text-emerald-700"
+              >
+                Rp 0
+              </div>
+            </div>
+          </div>
+
+          <a
+            id="waBtn"
+            target="_blank"
+            class="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            Ajukan via WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<script>
+(function(){
+  // ---- DATA ----
+  const FNB  = <%- JSON.stringify(fnb||[]) %>;
+  const GAME = <%- JSON.stringify(game||[]) %>;
+  const DATA = { FNB, GAME };
+
+  // ---- HELPERS ----
+  const nf   = new Intl.NumberFormat('id-ID');
+  const toRp = n => 'Rp ' + nf.format(Math.max(0, Math.round(n||0)));
+  const parseNum = v => Number(String(v||'').replace(/[^\d]/g,'')) || 0;
+
+  // ---- STATE ----
+  let active = 'FNB';                        // 'FNB' | 'GAME'
+  const rows = { FNB: [], GAME: [] };        // { brandIdx:number, nominal:number }
+
+  // ---- EL ----
+  const tabF = document.getElementById('tabFNB');
+  const tabG = document.getElementById('tabGAME');
+  const rowsBox = document.getElementById('rowsBox');
+  const addRowBtn = document.getElementById('addRow');
+  const clearRowsBtn = document.getElementById('clearRows');
+  const btnHitung = document.getElementById('btnHitung');
+  const btnSample = document.getElementById('btnSample');
+
+  const resultItems = document.getElementById('resultItems');
+  const outTotalNom = document.getElementById('outTotalNom');
+  const outTotalPot = document.getElementById('outTotalPot');
+  const outTotalPay = document.getElementById('outTotalPay');
+  const waBtn       = document.getElementById('waBtn');
+  const badge       = document.getElementById('activeTypeBadge');
+
+  // ---- UI helpers ----
+  function brandOptionsHTML(list, selectedIdx){
+    return list.map((b,i)=>{
+      const sel = i === (selectedIdx ?? 0) ? 'selected' : '';
+      const rateAdmin = Number(b.discount_pct||0);         // rate admin
+      return `<option value="${i}" ${sel}>${b.brand} — ${rateAdmin.toFixed(2)}%</option>`;
+    }).join('');
+  }
+
+  // bayar = nominal × (100% − rate_admin%)
+  function calcBayar(nominal, rateAdmin){
+    const diterimaPct = Math.max(0, Math.min(100, 100 - Number(rateAdmin||0)));
+    return Math.round(Number(nominal||0) * (diterimaPct/100));
+  }
+
+  function rowHTML(idx, item, list){
+    const brandIdx   = item.brandIdx ?? 0;
+    const brand      = list[brandIdx] || { brand: '-', discount_pct: 0 };
+    const rateAdmin  = Number(brand.discount_pct||0);
+    const diterimaPct= Math.max(0, Math.min(100, 100 - rateAdmin));
+    const nominal    = Number(item.nominal||0);
+    const bayar      = calcBayar(nominal, rateAdmin);
+
+    // 12 kolom total, tombol hapus ditempel di kolom terakhir
+    return `
+    <div class="grid grid-cols-12 gap-3 items-center px-4 py-3">
+      <div class="col-span-12 md:col-span-5">
+        <select data-idx="${idx}" class="selBrand w-full border rounded-xl px-3 py-2 focus:ring focus:outline-none">
+          ${brandOptionsHTML(list, brandIdx)}
+        </select>
+      </div>
+      <div class="col-span-7 md:col-span-3">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">Rp</span>
+          <input data-idx="${idx}" value="${nominal? nf.format(nominal): ''}" placeholder="0"
+                 class="inpNom w-full border rounded-xl pl-10 pr-3 py-2 focus:ring focus:outline-none" inputmode="numeric">
+        </div>
+      </div>
+      <div class="col-span-5 md:col-span-2 text-right text-xs md:text-sm">
+        <div class="inline-flex gap-1">
+          <span class="px-2 py-1 rounded bg-indigo-50 text-indigo-700">Rate ${rateAdmin.toFixed(2)}%</span>
+          <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-700">Diterima ${diterimaPct.toFixed(2)}%</span>
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-2 md:text-right">
+        <div class="flex md:block items-center justify-between gap-3">
+          <div class="text-sm font-semibold">${toRp(bayar)}</div>
+          <button type="button" data-idx="${idx}" class="btnDel text-rose-600 hover:text-rose-700">Hapus</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderRows(){
+    const list = DATA[active];
+    const arr  = rows[active];
+
+    if (!list.length){
+      rowsBox.innerHTML = `<div class="px-4 py-6 text-slate-500">Belum ada brand pada tipe <b>${active}</b>. Hubungi admin.</div>`;
+      return;
+    }
+    if (!arr.length){
+      rowsBox.innerHTML = `<div class="px-4 py-6 text-slate-500">Belum ada baris. Klik <b>+ Tambah Baris</b> untuk mulai.</div>`;
+      return;
+    }
+
+    rowsBox.innerHTML = arr.map((it, i)=> rowHTML(i, it, list)).join('');
+
+    // bind events row
+    rowsBox.querySelectorAll('.selBrand').forEach(sel=>{
+      sel.addEventListener('change', (e)=>{
+        const i = Number(e.target.dataset.idx);
+        rows[active][i].brandIdx = Number(e.target.value)||0;
+        renderRows(); renderResult();
+      });
+    });
+    rowsBox.querySelectorAll('.inpNom').forEach(inp=>{
+      inp.addEventListener('input', (e)=>{
+        const i = Number(e.target.dataset.idx);
+        const val = parseNum(e.target.value);
+        rows[active][i].nominal = val;
+        e.target.value = val ? nf.format(val) : '';
+        renderRows(); renderResult();
+      });
+    });
+    rowsBox.querySelectorAll('.btnDel').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const i = Number(e.target.dataset.idx);
+        rows[active].splice(i,1);
+        renderRows(); renderResult();
+      });
+    });
+  }
+
+  // ---- RESULT ----
+  function renderResult(){
+    badge.textContent = (active === 'FNB' ? 'F&B' : 'Game');
+    const list = DATA[active];
+    const arr  = rows[active];
+
+    let totalNom = 0, totalPay = 0;
+    resultItems.innerHTML = arr.length ? '' : `<div class="text-slate-500">Belum ada item.</div>`;
+
+    arr.forEach(it=>{
+      const brand      = list[it.brandIdx ?? 0] || { brand:'-', discount_pct:0 };
+      const rateAdmin  = Number(brand.discount_pct||0);
+      const diterimaPct= Math.max(0, Math.min(100, 100 - rateAdmin));
+      const nominal    = Number(it.nominal||0);
+      const bayar      = calcBayar(nominal, rateAdmin);
+
+      totalNom += nominal;
+      totalPay += bayar;
+
+      const line = document.createElement('div');
+      line.className = 'p-3 bg-white rounded-xl border';
+      line.innerHTML = `
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="text-sm font-semibold">${brand.brand}</div>
+            <div class="text-xs text-slate-500">Rate Admin ${rateAdmin.toFixed(2)}% • Diterima ${diterimaPct.toFixed(2)}%</div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-500">Nominal</div>
+            <div class="font-semibold">${toRp(nominal)}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-emerald-600">Bayar</div>
+            <div class="font-extrabold text-emerald-700">${toRp(bayar)}</div>
+          </div>
+        </div>`;
+      resultItems.appendChild(line);
+    });
+
+    const totalPot = totalNom - totalPay;
+    outTotalNom.textContent = toRp(totalNom);
+    outTotalPot.textContent = toRp(totalPot);
+    outTotalPay.textContent = toRp(totalPay);
+
+    // WhatsApp text
+    const lines = arr.map((it, idx)=>{
+      const b          = list[it.brandIdx ?? 0] || {brand:'-', discount_pct:0};
+      const rateAdmin  = Number(b.discount_pct||0);
+      const diterimaPct= Math.max(0, Math.min(100, 100 - rateAdmin));
+      const nominal    = Number(it.nominal||0);
+      const bayar      = calcBayar(nominal, rateAdmin);
+      return `${idx+1}. ${b.brand} — Nominal ${toRp(nominal)} — Rate Admin ${rateAdmin.toFixed(2)}% — Diterima ${diterimaPct.toFixed(2)}% — Bayar ${toRp(bayar)}`;
+    });
+    const head = `Halo admin, saya ingin beli voucher ${active==='FNB'?'F&B':'Game'}:`;
+    const tail = `\nTotal Nominal: ${toRp(totalNom)}\nTotal Bayar: ${toRp(totalPay)}\n\nMohon info ketersediaan & cara penukaran. Terima kasih.`;
+    waBtn.href = 'https://wa.me/6285785114471?text=' + encodeURIComponent([head, ...lines, tail].join('\n'));
+  }
+
+  // ---- ACTIONS ----
+  function addRow(defaultIdx){
+    const list = DATA[active];
+    if (!list.length) return;
+    rows[active].push({ brandIdx: Number(defaultIdx ?? 0), nominal: 0 });
+    renderRows(); renderResult();
+  }
+
+  function clearRows(){
+    rows[active] = [];
+    renderRows(); renderResult();
+  }
+
+  // Tabs
+  tabF.addEventListener('click', ()=>{
+    active = 'FNB';
+    tabF.className = 'px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-semibold';
+    tabG.className = 'px-4 py-2 rounded-xl hover:bg-slate-50';
+    renderRows(); renderResult();
+  });
+  tabG.addEventListener('click', ()=>{
+    active = 'GAME';
+    tabG.className = 'px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-semibold';
+    tabF.className = 'px-4 py-2 rounded-xl hover:bg-slate-50';
+    renderRows(); renderResult();
+  });
+
+  addRowBtn.addEventListener('click', ()=> addRow(0));
+  clearRowsBtn.addEventListener('click', clearRows);
+  btnHitung.addEventListener('click', renderResult);
+  btnSample.addEventListener('click', ()=>{
+    clearRows();
+    addRow(0);
+    if (DATA[active].length > 1) addRow(1);
+    if (rows[active][0]) rows[active][0].nominal = 100000;
+    if (rows[active][1]) rows[active][1].nominal = 200000;
+    renderRows(); renderResult();
+  });
+
+  // init
+  if (DATA[active].length) addRow(0); else renderRows();
+  renderResult();
+})();
+</script>

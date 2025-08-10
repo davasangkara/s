@@ -1,105 +1,359 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= title %></title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css" />
 
-  <!-- TailwindCSS & AOS.js -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-</head>
+    <!-- TailwindCSS & AOS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
+    <script defer src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
-<body class="bg-gray-50 text-gray-800 transition-all duration-300" onload="AOS.init()">
+    <style>
+      /* Link + underline animation */
+      .nav-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding-bottom: 4px;
+        color: #374151;
+        transition: color 0.25s ease;
+      }
+      .nav-link:hover {
+        color: #2563eb;
+      }
+      .nav-link::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 2px;
+        width: 0;
+        background: #2563eb;
+        transition: width 0.25s ease;
+      }
+      .nav-link:hover::after,
+      .nav-link.active::after {
+        width: 100%;
+      }
+      .nav-link.active {
+        color: #1d4ed8;
+      }
 
-<!-- Navbar -->
-<header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300" data-aos="fade-down">
-  <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-    <a href="/" class="text-2xl font-bold text-blue-600 tracking-wide hover:opacity-90 transition duration-300">
-      DigitalConvert
-    </a>
+      /* Mobile item */
+      .mobile-link {
+        display: block;
+        color: #374151;
+        padding: 0.5rem 0.5rem;
+        border-radius: 0.5rem;
+        transition: color 0.25s, background 0.25s;
+      }
+      .mobile-link:hover {
+        color: #2563eb;
+        background: #f3f4f6;
+      }
 
-    <!-- Desktop Menu -->
-    <nav class="hidden md:flex space-x-6 items-center text-sm font-medium">
-      <a href="/" class="nav-link">Beranda</a>
-      <a href="/simulasi-gestun" class="nav-link">Simulasi Gestun</a>
-      <a href="/public/simulasi-convert" class="nav-link">Simulasi Convert</a>
-      <a href="/simulasi-voucher" class="nav-link">Simulasi Voucher F&B</a>
-      <a href="/tentang" class="nav-link">Tentang Kami</a>
-      <a href="/admin/login" class="nav-link flex items-center gap-1">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                d="M15 12H3m6-6l-6 6 6 6m9-6a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Login
-      </a>
+      /* Dropdown (JS-controlled) */
+      [data-dropdown] .dropdown-panel {
+        display: none;
+      }
+      [data-dropdown].open .dropdown-panel {
+        display: block;
+      }
+      .chev {
+        transition: transform 0.2s ease;
+      }
+      [data-dropdown-button][aria-expanded="true"] .chev {
+        transform: rotate(180deg);
+      }
+    </style>
+  </head>
 
-      <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-        <% categories.forEach(cat => { %>
-          <a href="/kategori/<%= cat.slug %>" class="nav-link"><%= cat.name %></a>
-        <% }) %>
-      <% } %>
-    </nav>
+  <body class="bg-gray-50 text-gray-800 transition-all duration-300">
+    <!-- Navbar -->
+    <header class="sticky top-0 z-50" data-aos="fade-down">
+      <!-- top gradient line -->
+      <div
+        class="h-1 bg-gradient-to-r from-blue-600 via-fuchsia-500 to-purple-600"
+      ></div>
 
-    <!-- Mobile Menu Button -->
-    <div class="md:hidden">
-      <button id="mobile-menu-btn" class="text-gray-700 focus:outline-none focus:ring">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-             viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-    </div>
-  </div>
+      <div
+        id="topbar"
+        class="backdrop-blur bg-white/85 border-b border-gray-100"
+      >
+        <div
+          class="container mx-auto max-w-7xl px-4 py-4 flex justify-between items-center"
+        >
+          <a href="/" class="flex items-center gap-2 group">
+            <img
+              src="/images/payments/logo_d.png"
+              alt="DigitalConvert"
+              class="w-8 h-8 hidden sm:block opacity-90 group-hover:opacity-100 transition"
+            />
+            <span
+              class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-indigo-700 to-fuchsia-700"
+            >
+              DigitalConvert
+            </span>
+          </a>
 
-  <!-- Mobile Menu -->
-  <div id="mobile-menu"
-       class="transition-all duration-300 ease-in-out transform md:hidden scale-y-0 origin-top hidden px-4 pb-4 space-y-2 bg-white border-t border-gray-100">
-    <a href="/" class="mobile-link">Beranda</a>
-    <a href="/simulasi-gestun" class="mobile-link">Simulasi Gestun</a>
-    <a href="/simulasi-convert" class="mobile-link">Simulasi Convert</a>
-    <a href="/simulasi-voucher" class="mobile-link">Simulasi Voucher F&B</a>
-    <a href="/tentang" class="mobile-link">Tentang Kami</a>
-    <a href="/admin/login" class="mobile-link">Login</a>
+          <!-- helper: active link -->
+          <% function isActive(path){ try{ if(!currentPath) return '';
+          if(path==='/' ) return (currentPath==='/' ? 'active' : ''); return
+          currentPath.startsWith(path) ? 'active' : ''; } catch(e){ return '' }
+          } %>
 
-    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-      <% categories.forEach(cat => { %>
-        <a href="/kategori/<%= cat.slug %>" class="mobile-link"><%= cat.name %></a>
-      <% }) %>
-    <% } %>
-  </div>
-</header>
+          <!-- Desktop Menu -->
+          <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+            <a href="/" class="nav-link <%= isActive('/') %>">Beranda</a>
+            <a
+              href="/simulasi-gestun"
+              class="nav-link <%= isActive('/simulasi-gestun') %>"
+              >Simulasi Gestun</a
+            >
+            <a
+              href="/public/simulasi-convert"
+              class="nav-link <%= isActive('/public/simulasi-convert') %>"
+              >Simulasi Pulsa</a
+            >
+            <a
+              href="/simulasi-voucher"
+              class="nav-link <%= isActive('/simulasi-voucher') %>"
+              >Simulasi Voucher F&amp;B</a
+            >
 
-<script>
-  const menuBtn = document.getElementById("mobile-menu-btn");
-  const menu = document.getElementById("mobile-menu");
+            <!-- Dropdown Kategori (desktop) -->
+            <% if (typeof categories !== 'undefined' && categories.length > 0) {
+            %>
+            <div class="relative" data-dropdown>
+              <button
+                type="button"
+                class="nav-link <%= isActive('/kategori') %>"
+                data-dropdown-button
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                Kategori
+                <svg
+                  class="w-4 h-4 chev"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m6 9 6 6 6-6"
+                  />
+                </svg>
+              </button>
+              <div
+                class="dropdown-panel absolute right-0 mt-3 w-56 bg-white shadow-xl border border-gray-100 rounded-xl p-2"
+                data-dropdown-panel
+              >
+                <div class="max-h-72 overflow-auto">
+                  <% categories.forEach(cat => { %>
+                  <a
+                    href="/kategori/<%= cat.slug %>"
+                    class="block px-3 py-2 text-sm rounded-lg hover:bg-gray-50"
+                  >
+                    <%= cat.name %>
+                  </a>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
+            <% } %>
 
-  menuBtn.addEventListener("click", () => {
-    menu.classList.toggle("hidden");
+            <a href="/tentang" class="nav-link <%= isActive('/tentang') %>"
+              >Tentang Kami</a
+            >
 
-    if (!menu.classList.contains("hidden")) {
-      menu.classList.remove("scale-y-0");
-      menu.classList.add("scale-y-100");
-    } else {
-      menu.classList.remove("scale-y-100");
-      menu.classList.add("scale-y-0");
-    }
-  });
-</script>
+            <a href="/admin/login" class="nav-link">
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12H3m6-6l-6 6 6 6m9-6a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Login
+            </a>
+          </nav>
 
-<style>
-  .nav-link {
-    @apply text-gray-700 hover:text-blue-600 transition relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-blue-600 hover:after:w-full after:transition-all after:duration-300;
-    position: relative;
-    padding-bottom: 4px;
-  }
+          <!-- Mobile Menu Button -->
+          <button
+            id="mobile-menu-btn"
+            class="md:hidden text-gray-700 focus:outline-none focus:ring rounded-lg p-2"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+            aria-label="Toggle menu"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
 
-  .mobile-link {
-    @apply block text-gray-700 hover:text-blue-600 transition py-2 px-2 rounded-md;
-  }
-</style>
+        <!-- Mobile Menu -->
+        <div
+          id="mobile-menu"
+          class="hidden md:hidden px-4 pb-4 space-y-2 bg-white border-t border-gray-100 overflow-hidden transition-all duration-300"
+        >
+          <a href="/" class="mobile-link">Beranda</a>
+          <a href="/simulasi-gestun" class="mobile-link">Simulasi Gestun</a>
+          <a href="/public/simulasi-convert" class="mobile-link"
+            >Simulasi Pulsa</a
+          >
+          <a href="/simulasi-voucher" class="mobile-link"
+            >Simulasi Voucher F&amp;B</a
+          >
 
-<main class="container mx-auto px-4 py-6">
+          <% if (typeof categories !== 'undefined' && categories.length > 0) {
+          %>
+          <details class="rounded-lg border border-gray-100">
+            <summary class="mobile-link cursor-pointer">Kategori</summary>
+            <div class="px-2 pb-2">
+              <% categories.forEach(cat => { %>
+              <a
+                href="/kategori/<%= cat.slug %>"
+                class="block text-gray-700 hover:text-blue-600 transition py-1 px-2 rounded-md"
+              >
+                <%= cat.name %>
+              </a>
+              <% }) %>
+            </div>
+          </details>
+          <% } %>
+
+          <a href="/tentang" class="mobile-link">Tentang Kami</a>
+          <a href="/admin/login" class="mobile-link">Login</a>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      // Init AOS safely
+      window.addEventListener("DOMContentLoaded", () => {
+        if (window.AOS)
+          AOS.init({ once: true, duration: 500, easing: "ease-out" });
+      });
+
+      // Mobile toggle
+      const menuBtn = document.getElementById("mobile-menu-btn");
+      const menu = document.getElementById("mobile-menu");
+      menuBtn?.addEventListener("click", () => {
+        const expanded = menuBtn.getAttribute("aria-expanded") === "true";
+        menuBtn.setAttribute("aria-expanded", String(!expanded));
+        menu.classList.toggle("hidden");
+        if (!expanded) {
+          menu.style.maxHeight = menu.scrollHeight + "px";
+        } else {
+          menu.style.maxHeight = "0px";
+        }
+      });
+
+      // Dropdown desktop (touch + click friendly)
+      (function () {
+        const dropdowns = document.querySelectorAll("[data-dropdown]");
+        const closeAll = (except = null) => {
+          dropdowns.forEach((dd) => {
+            if (dd !== except) {
+              dd.classList.remove("open");
+              const btn = dd.querySelector("[data-dropdown-button]");
+              const panel = dd.querySelector("[data-dropdown-panel]");
+              if (btn) btn.setAttribute("aria-expanded", "false");
+              if (panel) panel.classList.add("hidden"); // keep hidden for transition-less simplicity
+            }
+          });
+        };
+
+        dropdowns.forEach((dd) => {
+          const btn = dd.querySelector("[data-dropdown-button]");
+          const panel = dd.querySelector("[data-dropdown-panel]");
+          if (!btn || !panel) return;
+
+          // open/close helpers
+          const open = () => {
+            dd.classList.add("open");
+            panel.classList.remove("hidden");
+            btn.setAttribute("aria-expanded", "true");
+          };
+          const close = () => {
+            dd.classList.remove("open");
+            panel.classList.add("hidden");
+            btn.setAttribute("aria-expanded", "false");
+          };
+
+          // click/touch toggle
+          btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = dd.classList.contains("open");
+            closeAll(dd);
+            isOpen ? close() : open();
+          });
+
+          // keep open when clicking inside panel
+          panel.addEventListener("click", (e) => e.stopPropagation());
+
+          // close when clicking outside
+          document.addEventListener("click", (e) => {
+            if (!dd.contains(e.target)) close();
+          });
+
+          // keyboard support
+          btn.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              close();
+              btn.blur();
+            }
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              btn.click();
+            }
+          });
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeAll();
+          });
+        });
+      })();
+
+      // Add shadow on scroll for topbar
+      const topbar = document.getElementById("topbar");
+      let lastY = 0;
+      window.addEventListener("scroll", () => {
+        const y = window.scrollY || 0;
+        if (y > 6 && lastY <= 6) topbar.classList.add("shadow-md");
+        if (y <= 6 && lastY > 6) topbar.classList.remove("shadow-md");
+        lastY = y;
+      });
+    </script>
+
+    <main class="container mx-auto max-w-7xl px-4 py-6"></main>
+  </body>
+</html>

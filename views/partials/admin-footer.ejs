@@ -1,7 +1,20 @@
-  </main>
+</main>
 
-  <footer class="bg-white border-t mt-10 p-4 text-center text-sm text-gray-500">
-    &copy; <%= new Date().getFullYear() %> ConvertApp Admin Panel
-  </footer>
+<footer class="mt-8 py-6 text-center text-xs text-gray-400">
+  © <%= new Date().getFullYear() %> DigitalConvert • Admin Panel
+</footer>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-3 rounded-lg shadow-lg"></div>
+<script>
+  window.notify = function(msg, type='info'){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'fixed bottom-6 right-6 text-sm px-4 py-3 rounded-lg shadow-lg ' + (type==='error'?'bg-red-600 text-white': type==='success'?'bg-green-600 text-white':'bg-gray-900 text-white');
+    t.classList.remove('hidden');
+    setTimeout(()=>t.classList.add('hidden'), 2200);
+  };
+</script>
+
 </body>
 </html>

@@ -3,27 +3,228 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= title %></title>
+    <title>
+      <%= typeof title !== 'undefined' ? title : 'Admin — DigitalConvert' %>
+    </title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css" />
+
+    <style>
+      .nav-link {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.75rem;
+        transition: 0.2s;
+      }
+      .nav-link:hover {
+        background: #f3f4f6;
+      }
+      .nav-link.active {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 0.75rem;
+        padding: 0.5rem 0.9rem;
+        transition: 0.2s;
+      }
+      .btn-primary {
+        background: #2563eb;
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #1d4ed8;
+      }
+      .btn-ghost {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+      }
+      .btn-ghost:hover {
+        background: #f9fafb;
+      }
+      .kebab {
+        width: 2px;
+        height: 2px;
+        background: #9ca3af;
+        border-radius: 9999px;
+        box-shadow: 0 6px 0 #9ca3af, 0 -6px 0 #9ca3af;
+      }
+      .soft-card {
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+      }
+    </style>
   </head>
-  <body class="bg-gray-100 text-gray-800">
-    <header class="bg-blue-700 text-white shadow">
+  <body class="bg-gray-50 text-gray-800">
+    <!-- Topbar -->
+    <header
+      class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100"
+    >
       <div
-        class="container mx-auto px-4 py-4 flex justify-between items-center"
+        class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"
       >
-        <h1 class="text-xl font-bold">Dashboard Admin</h1>
-        <nav class="space-x-4 text-sm">
-          <a href="/admin/dashboard" class="hover:underline">Dashboard</a>
-          <a href="/admin/produk" class="hover:underline">Produk</a>
-          <a href="/admin/kategori" class="hover:underline">Kategori</a>
-        
-          <a href="/admin/logout" class="hover:underline text-red-300"
-            >Logout</a
+        <!-- Brand -->
+        <a href="/admin/dashboard" class="flex items-center gap-2">
+          <img src="/images/payments/logo_d.png" alt="logo" class="w-7 h-7" />
+          <span class="font-extrabold tracking-tight text-lg"
+            >Admin • DigitalConvert</span
           >
-        </nav>
+        </a>
+
+        <!-- Desktop nav -->
+        <% const CP = (currentPath||''); %>
+
+
+          <!-- <a class="nav-link <%= CP.startsWith('/admin/logs') ? 'active':'' %>" href="/admin/logs">Log</a> -->
+           <nav class="hidden md:flex items-center gap-2">
+  <a class="nav-link <%= currentPath.startsWith('/admin/dashboard')?'bg-gray-100':''%>" href="/admin/dashboard">Dashboard</a>
+  <a class="nav-link <%= currentPath.startsWith('/admin/produk')?'bg-gray-100':''%>"    href="/admin/produk">Produk</a>
+  <a class="nav-link <%= currentPath.startsWith('/admin/kategori')?'bg-gray-100':''%>"  href="/admin/kategori">Kategori</a>
+  <a class="nav-link <%= currentPath.startsWith('/admin/gestun')?'bg-gray-100':''%>"    href="/admin/gestun">Gestun</a>
+  <a class="nav-link <%= currentPath.startsWith('/admin/pulsa')?'bg-gray-100':''%>"     href="/admin/pulsa">Rate Pulsa</a>
+  <a class="nav-link <%= currentPath.startsWith('/admin/voucher')?'bg-gray-100':''%>"   href="/admin/voucher">Voucher</a>
+</nav>
+
+
+        <!-- Right: user + mobile toggle -->
+        <div class="flex items-center gap-2">
+          <!-- Mobile button -->
+          <button
+            id="mobileToggle"
+            class="md:hidden btn btn-ghost"
+            aria-controls="mobileMenu"
+            aria-expanded="false"
+            aria-label="Toggle menu"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+
+          <!-- User menu -->
+          <div class="relative">
+            <button
+              id="userBtn"
+              class="btn btn-ghost"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <img
+                src="/images/payments/logo_d.png"
+                class="w-7 h-7 rounded-full ring-2 ring-white"
+                alt=""
+              />
+              <span class="hidden md:inline"
+                ><%= (admin && admin.username) ? admin.username : 'Admin'
+                %></span
+              >
+              <span class="kebab"></span>
+            </button>
+            <div
+              id="userMenu"
+              class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl p-2"
+            >
+              <a
+                href="/admin/dashboard"
+                class="block px-3 py-2 rounded-lg hover:bg-gray-50"
+                >Dashboard</a
+              >
+              <a
+                href="/admin/logout"
+                class="block px-3 py-2 rounded-lg hover:bg-gray-50 text-red-600"
+                >Logout</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile menu -->
+      <div
+        id="mobileMenu"
+        class="md:hidden hidden border-t border-gray-100 bg-white"
+      >
+        <div class="max-w-7xl mx-auto px-4 py-2 space-y-1">
+          <a
+            class="block nav-link <%= CP.startsWith('/admin/dashboard') ? 'active':'' %>"
+            href="/admin/dashboard"
+            >Dashboard</a
+          >
+          <a
+            class="block nav-link <%= CP.startsWith('/admin/produk') ? 'active':'' %>"
+            href="/admin/produk"
+            >Produk</a
+          >
+          <a
+            class="block nav-link <%= CP.startsWith('/admin/kategori') ? 'active':'' %>"
+            href="/admin/kategori"
+            >Kategori</a
+          >
+          <!-- ✅ Tambahan: Gestun (mobile) -->
+          <a
+            class="block nav-link <%= CP.startsWith('/admin/gestun') ? 'active':'' %>"
+            href="/admin/gestun"
+            >Gestun</a
+          >
+          <a
+            class="block nav-link <%= (currentPath||'').startsWith('/admin/pulsa') ? 'active':'' %>"
+            href="/admin/pulsa"
+            >Rate Pulsa</a
+          >
+          <a
+            class="block nav-link <%= (currentPath||'').startsWith('/admin/voucher') ? 'active':'' %>"
+            href="/admin/voucher"
+            >Voucher</a
+          >
+
+          <!-- <a class="block nav-link <%= CP.startsWith('/admin/logs') ? 'active':'' %>" href="/admin/logs">Log</a> -->
+        </div>
       </div>
     </header>
 
-    <main class="container mx-auto px-4 py-6"></main>
+    <!-- Page container starts here -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <script>
+        // Mobile nav toggle
+        (function () {
+          const btn = document.getElementById("mobileToggle");
+          const menu = document.getElementById("mobileMenu");
+          btn?.addEventListener("click", () => {
+            const exp = btn.getAttribute("aria-expanded") === "true";
+            btn.setAttribute("aria-expanded", String(!exp));
+            menu.classList.toggle("hidden");
+          });
+        })();
+
+        // User dropdown
+        (function () {
+          const btn = document.getElementById("userBtn");
+          const menu = document.getElementById("userMenu");
+          btn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const exp = btn.getAttribute("aria-expanded") === "true";
+            btn.setAttribute("aria-expanded", String(!exp));
+            menu.classList.toggle("hidden");
+          });
+          document.addEventListener("click", () =>
+            menu?.classList.add("hidden")
+          );
+        })();
+      </script>
+    </main>
   </body>
 </html>

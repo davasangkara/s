@@ -1,0 +1,188 @@
+<%- include('../../partials/admin-header', { title }) %>
+
+<%
+  const list = (rates||[]).map(r=>({ id:r.id, type:r.type, brand:r.brand, disc:Number(r.discount_pct||0) }));
+  const total = list.length;
+  const discs = list.map(x=>x.disc);
+  const avg = discs.length ? discs.reduce((a,b)=>a+b,0)/discs.length : 0;
+  const max = discs.length ? Math.max(...discs) : 0;
+  const min = discs.length ? Math.min(...discs) : 0;
+  const countF = list.filter(x=>x.type==='FNB').length;
+  const countG = list.filter(x=>x.type==='GAME').length;
+%>
+
+<style>
+  .ribbon{height:8px;border-radius:9999px;background:linear-gradient(90deg,#22c55e 0%,#10b981 30%,#f59e0b 60%,#ef4444 100%)}
+  .chip{font-size:.75rem;padding:.45rem .7rem;border-radius:.7rem;border:1px solid #e5e7eb;background:#fff;color:#1f2937;transition:.2s}
+  .chip.active[data-t="all"]{background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
+  .chip.active[data-t="FNB"]{background:#e0f2fe;color:#075985;border-color:#bae6fd}
+  .chip.active[data-t="GAME"]{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe}
+
+  .chip.active[data-r="lt5"]{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+  .chip.active[data-r="5-15"]{background:#fffbeb;color:#92400e;border-color:#fde68a}
+  .chip.active[data-r="gt15"]{background:#fff1f2;color:#9f1239;border-color:#fecdd3}
+
+  tr.row-colored{position:relative}
+  tr.row-colored::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:hsl(var(--tone)/.95);border-radius:0 8px 8px 0}
+  .pill{background:hsl(var(--tone)/.14);color:hsl(var(--tone)/.98);border:1px solid hsl(var(--tone)/.28)}
+  .type-badge{font-weight:700;font-size:.72rem;padding:.25rem .5rem;border-radius:.5rem}
+  .type-badge.FNB{background:#e0f2fe;color:#075985;border:1px solid #bae6fd}
+  .type-badge.GAME{background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe}
+</style>
+
+<div class="max-w-6xl mx-auto mt-6">
+  <div class="ribbon mb-6"></div>
+
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Voucher (F&B + Game)</h1>
+      <p class="text-sm text-slate-500">Atur brand & Rate. Total <span class="font-medium text-slate-700"><%= total %></span> (F&B: <%= countF %>, Game: <%= countG %>).</p>
+    </div>
+    <div class="flex w-full md:w-auto items-center gap-2">
+      <div class="relative flex-1 md:w-64">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/></svg>
+        <input id="q" placeholder="Cari brand…" class="w-full pl-9 pr-3 py-2 rounded-xl border focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+      </div>
+      <select id="sortSel" class="border rounded-xl px-3 py-2">
+        <option value="brand-asc">Brand A–Z</option>
+        <option value="brand-desc">Brand Z–A</option>
+        <option value="disc-desc">Rate tertinggi</option>
+        <option value="disc-asc">Rate terendah</option>
+      </select>
+      <a href="/admin/voucher/new" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white hover:brightness-110 shadow">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Tambah
+      </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rata-rata Rate</div>
+      <div class="mt-1 text-2xl font-extrabold text-indigo-700"><%= avg.toFixed(2) %>%</div>
+    </div>
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rate Tertinggi</div>
+      <div class="mt-1 text-2xl font-extrabold text-rose-600"><%= max.toFixed(2) %>%</div>
+    </div>
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rate Terendah</div>
+      <div class="mt-1 text-2xl font-extrabold text-emerald-600"><%= min.toFixed(2) %>%</div>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-xs text-slate-500 mr-1">Filter:</span>
+    <button class="chip active" data-t="all">Semua</button>
+    <button class="chip" data-t="FNB">F&B</button>
+    <button class="chip" data-t="GAME">Game</button>
+    <span class="mx-2 text-slate-300">|</span>
+    <button class="chip" data-r="lt5">&lt; 5%</button>
+    <button class="chip" data-r="5-15">5% – 15%</button>
+    <button class="chip" data-r="gt15">&gt; 15%</button>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-2xl shadow ring-1 ring-black/5 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold">Tipe</th>
+            <th class="px-4 py-3 text-left font-semibold">Brand</th>
+            <th class="px-4 py-3 text-left font-semibold">Rate</th>
+            <th class="px-4 py-3 text-right font-semibold">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tblBody" class="divide-y">
+          <% list.forEach(r => { %>
+            <tr class="hover:bg-slate-50/60 row row-colored" data-type="<%= r.type %>" data-brand="<%= r.brand.toLowerCase() %>" data-disc="<%= r.disc %>">
+              <td class="px-4 py-3"><span class="type-badge <%= r.type %>"><%= r.type==='FNB'?'F&B':'Game' %></span></td>
+              <td class="px-4 py-3 font-medium text-slate-900"><%= r.brand %></td>
+              <td class="px-4 py-3"><span class="pill inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold"><%= r.disc.toFixed(2) %>%</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2 justify-end">
+                  <a href="/admin/voucher/edit/<%= r.id %>" class="px-3 py-1.5 rounded-lg bg-white border hover:bg-slate-50">Edit</a>
+                  <form action="/admin/voucher/delete/<%= r.id %>" method="POST" onsubmit="return confirm('Hapus data ini?')">
+                    <button class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Hapus</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+
+          <% if (total === 0) { %>
+            <tr><td colspan="4" class="px-4 py-14 text-center text-slate-500">Belum ada data.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const body = document.getElementById('tblBody');
+  const q = document.getElementById('q');
+  const sortSel = document.getElementById('sortSel');
+  const chips = Array.from(document.querySelectorAll('.chip'));
+
+  // Hue: Diskon 0% → merah, 25% → hijau (semakin besar diskon makin hijau)
+  function hueFromDisc(d){
+    const v = Math.max(0, Math.min(25, d));
+    return 0 + (140 * (v/25));
+  }
+  function rows(){ return Array.from(body.querySelectorAll('.row')); }
+  function paint(r){
+    const d = parseFloat(r.dataset.disc||'0');
+    const hue = hueFromDisc(d).toFixed(0);
+    r.style.setProperty('--tone', `${hue} 85% 45%`);
+    r.querySelector('.pill')?.style.setProperty('--tone', `${hue} 85% 45%`);
+  }
+  rows().forEach(paint);
+
+  function filter(){
+    const text = (q.value||'').toLowerCase().trim();
+    const tActive = chips.find(c=>c.dataset.t && c.classList.contains('active'))?.dataset.t || 'all';
+    const rActive = chips.find(c=>c.dataset.r && c.classList.contains('active'))?.dataset.r || null;
+
+    rows().forEach(r=>{
+      const brand = r.dataset.brand||'';
+      const type  = r.dataset.type||'';
+      const disc  = parseFloat(r.dataset.disc||'0');
+      let ok = brand.includes(text);
+      if(tActive!=='all') ok = ok && type===tActive;
+      if(rActive==='lt5')  ok = ok && disc < 5;
+      if(rActive==='5-15') ok = ok && disc >= 5 && disc <= 15;
+      if(rActive==='gt15') ok = ok && disc > 15;
+      r.style.display = ok ? '' : 'none';
+    });
+  }
+  function sort(){
+    const v = sortSel.value;
+    const arr = rows().filter(r=>r.style.display!=='none');
+    const byBrand=(a,b)=>a.dataset.brand.localeCompare(b.dataset.brand);
+    const byDisc=(a,b)=>parseFloat(a.dataset.disc)-parseFloat(b.dataset.disc);
+    arr.sort(v==='brand-asc'?byBrand : v==='brand-desc'?(a,b)=>byBrand(b,a) : v==='disc-asc'?byDisc : (a,b)=>byDisc(b,a));
+    arr.forEach(r=>body.appendChild(r));
+  }
+
+  q.addEventListener('input', ()=>{ filter(); sort(); });
+  sortSel.addEventListener('change', sort);
+  chips.forEach(c=>c.addEventListener('click', ()=>{
+    // toggle per-kategori (allow one type chip active & one range chip active)
+    if(c.dataset.t){ document.querySelectorAll('.chip[data-t]').forEach(x=>x.classList.remove('active')); }
+    if(c.dataset.r){ document.querySelectorAll('.chip[data-r]').forEach(x=>x.classList.remove('active')); }
+    c.classList.add('active');
+    filter(); sort();
+  }));
+
+  // Default aktif: type=all, range none
+  document.querySelector('.chip[data-t="all"]').classList.add('active');
+  filter(); sort();
+})();
+</script>
+
+<%- include('../../partials/admin-footer') %>

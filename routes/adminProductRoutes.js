@@ -58,4 +58,6 @@ router.get('/hapus/:id', isAdmin, async (req, res) => {
   res.redirect('/admin/produk');
 });
 
+
+
 module.exports = router;

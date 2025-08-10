@@ -1,93 +1,412 @@
 <%- include('../partials/admin-header') %>
 
-<h2 class="text-2xl font-semibold mb-6">Selamat Datang, <%= admin.username %> 👋</h2>
+<%
+  // ----- SAFE FALLBACKS -----
+  const adminName           = (admin && admin.username) || 'Admin';
 
-<!-- Statistik Kartu -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  const totalKategori       = Number(typeof total_kategori       !== 'undefined' ? total_kategori       : 0);
+  const totalProduk         = Number(typeof total_produk         !== 'undefined' ? total_produk         : 0);
+
+  // Sinkron dengan fitur baru:
+  const totalProviderGestun = Number(typeof total_provider_gestun!== 'undefined' ? total_provider_gestun: 0);
+  const totalRatePulsa      = Number(typeof total_rate_pulsa     !== 'undefined' ? total_rate_pulsa     : 0);
+  const totalVoucherFnb     = Number(typeof total_voucher_fnb    !== 'undefined' ? total_voucher_fnb    : 0);
+  const totalVoucherGame    = Number(typeof total_voucher_game   !== 'undefined' ? total_voucher_game   : 0);
+
+  // Chart data
+  const list       = (produkPerKategori || []).map(p => ({ kategori: p.kategori, jumlah: Number(p.jumlah||0) }));
+  const hasData    = list.length > 0;
+  const labels     = list.map(p => p.kategori);
+  const values     = list.map(p => p.jumlah);
+  const topSorted  = [...list].sort((a,b)=>b.jumlah-a.jumlah).slice(0,5);
+
+  const today = new Date();
+  const tgl   = today.toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+%>
+
+<style>
+  :root{
+    --bg:#f8fafc;         /* slate-50 */
+    --card:#ffffff;
+    --text:#0f172a;       /* slate-900 */
+    --muted:#475569;      /* slate-600 */
+    --line:#e5e7eb;       /* gray-200 */
+    --shadow:0 12px 36px rgba(2,6,23,.06);
+
+    --blue:#2563eb;       /* blue-600 */
+    --blue-700:#1d4ed8;
+    --indigo:#4f46e5;
+    --violet:#7c3aed;
+    --pink:#db2777;
+    --emerald:#059669;
+  }
+  body{ background:var(--bg); color:var(--text); }
+
+  .dash-hero{
+    background:
+      radial-gradient(900px 320px at -10% -10%, rgba(255,255,255,.25), transparent),
+      radial-gradient(900px 320px at 110% 120%, rgba(255,255,255,.18), transparent),
+      linear-gradient(135deg, var(--blue) 0%, var(--indigo) 55%, var(--pink) 100%);
+  }
+
+  .kpi{
+    position: relative; overflow: hidden;
+    border-radius: 1.2rem; background: var(--card);
+    box-shadow: var(--shadow); border:1px solid var(--line);
+  }
+  .kpi::before{
+    content:""; position:absolute; inset:-1px; border-radius:1.25rem;
+    background: linear-gradient(90deg, rgba(37,99,235,.18), rgba(79,70,229,.18) 50%, rgba(219,39,119,.18));
+    filter: blur(12px); opacity:.3; z-index:-1;
+  }
+  .panel{
+    background:var(--card); border-radius:1.2rem; box-shadow:var(--shadow); border:1px solid var(--line);
+  }
+  .chart-bg{
+    border-radius: 1rem;
+    background-image:
+      radial-gradient(1000px 260px at 0% 0%, rgba(37,99,235,.10), transparent),
+      radial-gradient(900px 200px at 100% 100%, rgba(219,39,119,.08), transparent);
+    border:1px solid #eef2ff;
+  }
+  .soft-btn{
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.55rem .9rem; border-radius:.9rem; border:1px solid rgba(255,255,255,.6);
+    color:#fff; background:rgba(255,255,255,.08);
+    transition:.2s;
+  }
+  .soft-btn:hover{ background:rgba(255,255,255,.14); }
+</style>
+
+<!-- HERO -->
+<section class="dash-hero text-white rounded-3xl p-6 md:p-8 mb-8 relative overflow-hidden">
+  <div class="absolute -right-20 -top-24 w-[420px] h-[420px] rounded-full bg-white/10 blur-3xl"></div>
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 relative z-10">
+    <div>
+      <p class="text-white/90 text-sm mb-1"><%= tgl %></p>
+      <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+        Halo, <span class="underline decoration-white/60"><%= adminName %></span> 👋
+      </h2>
+      <p class="mt-2 text-white/95">Ringkasan data, aksi cepat, dan aktivitas terbaru.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="/admin/produk/edit/0" class="soft-btn bg-white text-blue-700 border-white hover:bg-blue-50 hover:text-blue-800">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Tambah Produk
+      </a>
+      <a href="/admin/kategori" class="soft-btn">Kategori</a>
+      <a href="/admin/export/products.csv" class="soft-btn">Export CSV</a>
+    </div>
+  </div>
+</section>
+
+<!-- KPI CARDS (sinkron dengan fitur baru) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
   <!-- Kategori -->
-  <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
-    <h3 class="text-sm font-medium text-gray-500 mb-1">Total Kategori</h3>
-    <p class="text-4xl font-bold text-blue-600"><%= total_kategori %></p>
+  <div class="kpi p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-medium text-slate-600">Kategori</h3>
+        <p class="mt-1 text-3xl font-extrabold text-blue-600"><%= totalKategori %></p>
+      </div>
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700 border border-blue-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h4l2 2h12v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+      </span>
+    </div>
+    <a href="/admin/kategori" class="mt-3 inline-block text-xs text-blue-700 hover:underline">Kelola</a>
   </div>
 
   <!-- Produk -->
-  <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition transform hover:-translate-y-1">
-    <h3 class="text-sm font-medium text-gray-500 mb-1">Total Produk</h3>
-    <p class="text-4xl font-bold text-indigo-600"><%= total_produk %></p>
+  <div class="kpi p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-medium text-slate-600">Produk</h3>
+        <p class="mt-1 text-3xl font-extrabold text-indigo-600"><%= totalProduk %></p>
+      </div>
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 border border-indigo-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4"/></svg>
+      </span>
+    </div>
+    <a href="/admin/produk" class="mt-3 inline-block text-xs text-indigo-700 hover:underline">Kelola</a>
   </div>
 
-  <!-- Placeholder -->
-  <div class="bg-white p-6 rounded-2xl shadow text-center text-sm text-gray-400 flex items-center justify-center hover:shadow-lg transition">
-    ✨ Info gestun, voucher, dsb bisa ditampilkan nanti di sini
+  <!-- Provider Gestun -->
+  <div class="kpi p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-medium text-slate-600">Provider Gestun</h3>
+        <p class="mt-1 text-3xl font-extrabold text-violet-700"><%= totalProviderGestun %></p>
+      </div>
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700 border border-violet-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 2c-2.761 0-5 2.239-5 5v5h10v-5c0-2.761-2.239-5-5-5z"/></svg>
+      </span>
+    </div>
+    <a href="/admin/gestun/providers" class="mt-3 inline-block text-xs text-violet-700 hover:underline">Kelola Gestun</a>
+  </div>
+
+  <!-- Rate Pulsa -->
+  <div class="kpi p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-medium text-slate-600">Rate Pulsa</h3>
+        <p class="mt-1 text-3xl font-extrabold text-pink-600"><%= totalRatePulsa %></p>
+      </div>
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100 text-pink-700 border border-pink-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 6h10M7 14h6"/></svg>
+      </span>
+    </div>
+    <a href="/admin/rate-pulsa" class="mt-3 inline-block text-xs text-pink-700 hover:underline">Kelola Rate</a>
+  </div>
+
+  <!-- Voucher F&B -->
+  <div class="kpi p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-medium text-slate-600">Voucher F&amp;B</h3>
+        <p class="mt-1 text-3xl font-extrabold text-emerald-600"><%= totalVoucherFnb %></p>
+      </div>
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M10 14h10M10 18h10"/></svg>
+      </span>
+    </div>
+    <a href="/admin/vouchers?type=FNB" class="mt-3 inline-block text-xs text-emerald-700 hover:underline">Kelola Voucher F&amp;B</a>
+  </div>
+
+  <!-- Voucher Game -->
+  <div class="kpi p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-medium text-slate-600">Voucher Game</h3>
+        <p class="mt-1 text-3xl font-extrabold text-indigo-700"><%= totalVoucherGame %></p>
+      </div>
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 border border-indigo-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6M4 8h16M6 16h12"/></svg>
+      </span>
+    </div>
+    <a href="/admin/vouchers?type=GAME" class="mt-3 inline-block text-xs text-indigo-700 hover:underline">Kelola Voucher Game</a>
   </div>
 </div>
 
-<!-- Grafik Produk per Kategori -->
-<div class="mt-10 bg-white p-6 rounded-2xl shadow">
-  <h3 class="text-lg font-semibold text-gray-700 mb-4">Grafik Jumlah Produk per Kategori</h3>
-  <div class="w-full overflow-x-auto">
-    <canvas id="produkChart" style="min-width: 400px; max-width: 100%; height: auto;"></canvas>
+<!-- CHART + SIDE -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-8">
+  <!-- Chart Panel -->
+  <div class="xl:col-span-2 panel p-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-slate-900">Jumlah Produk per Kategori</h3>
+      <% if (hasData) { %><span class="text-xs text-slate-500">Total kategori: <%= labels.length %></span><% } %>
+    </div>
+    <% if (hasData) { %>
+      <div class="mt-4 chart-bg w-full h-80 md:h-[420px] p-2">
+        <canvas id="produkChart" class="w-full h-full"></canvas>
+      </div>
+    <% } else { %>
+      <div class="mt-6 border border-dashed border-slate-300 rounded-xl p-8 text-center">
+        <p class="font-medium text-slate-800">Belum ada data kategori</p>
+        <p class="text-sm text-slate-600">Tambah kategori & produk untuk melihat grafik.</p>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Right Column -->
+  <div class="space-y-6">
+    <!-- Top Kategori -->
+    <div class="panel p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-slate-900">Top Kategori</h3>
+        <span class="text-xs text-slate-500"><%= topSorted.length %> teratas</span>
+      </div>
+      <% if (topSorted.length) { %>
+      <ul class="mt-4 space-y-3">
+        <% topSorted.forEach((k, idx) => { %>
+          <li class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 grid place-items-center rounded-lg <%= idx===0?'bg-blue-100 text-blue-700 border border-blue-200'
+                : idx===1?'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                : 'bg-pink-100 text-pink-700 border border-pink-200' %>"><%= idx+1 %></span>
+              <span class="font-medium text-slate-900"><%= k.kategori %></span>
+            </div>
+            <span class="text-sm text-slate-700"><%= k.jumlah %> produk</span>
+          </li>
+        <% }) %>
+      </ul>
+      <% } else { %>
+        <div class="mt-4 text-sm text-slate-600">Belum ada data.</div>
+      <% } %>
+    </div>
+
+    <!-- Aktivitas Terbaru -->
+    <div class="panel p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-slate-900">Aktivitas Terbaru</h3>
+        <a class="text-xs text-blue-600 hover:underline" href="/admin/logs">Lihat semua</a>
+      </div>
+      <% if ((logs||[]).length) { %>
+        <ul class="mt-4 space-y-4">
+          <% logs.slice(0,7).forEach(l => { %>
+            <li class="flex items-start gap-3">
+              <span class="mt-1 w-2 h-2 rounded-full bg-blue-600"></span>
+              <div>
+                <p class="text-sm">
+                  <span class="font-semibold text-slate-900"><%= l.username %></span>
+                  <span class="text-slate-700"> <%= l.action %> </span>
+                  <span class="font-semibold text-slate-900"><%= l.entity %></span>
+                  <span class="text-slate-500">#<%= l.entity_id %></span>
+                </p>
+                <p class="text-xs text-slate-500"><%= new Date(l.created_at).toLocaleString('id-ID') %></p>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <div class="mt-6 text-sm text-slate-600">Belum ada log aktivitas.</div>
+      <% } %>
+    </div>
+
+    <!-- Aksi Cepat (sinkron fitur baru) -->
+    <div class="panel p-6">
+      <h3 class="text-lg font-semibold text-slate-900 mb-3">Aksi Cepat</h3>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <a class="rounded-xl border p-3 hover:bg-slate-50 transition flex items-center justify-between" href="/admin/gestun/providers">
+          <div>
+            <div class="font-semibold">Kelola Provider Gestun</div>
+            <div class="text-xs text-slate-600">Tambah/Ubah provider & rate</div>
+          </div>
+          <span class="text-violet-700 text-sm font-semibold"><%= totalProviderGestun %></span>
+        </a>
+        <a class="rounded-xl border p-3 hover:bg-slate-50 transition flex items-center justify-between" href="/admin/rate-pulsa">
+          <div>
+            <div class="font-semibold">Kelola Rate Pulsa</div>
+            <div class="text-xs text-slate-600">Atur operator & rate</div>
+          </div>
+          <span class="text-pink-700 text-sm font-semibold"><%= totalRatePulsa %></span>
+        </a>
+        <a class="rounded-xl border p-3 hover:bg-slate-50 transition flex items-center justify-between" href="/admin/vouchers?type=FNB">
+          <div>
+            <div class="font-semibold">Voucher F&amp;B</div>
+            <div class="text-xs text-slate-600">Brand & diskon</div>
+          </div>
+          <span class="text-emerald-700 text-sm font-semibold"><%= totalVoucherFnb %></span>
+        </a>
+        <a class="rounded-xl border p-3 hover:bg-slate-50 transition flex items-center justify-between" href="/admin/vouchers?type=GAME">
+          <div>
+            <div class="font-semibold">Voucher Game</div>
+            <div class="text-xs text-slate-600">Brand & diskon</div>
+          </div>
+          <span class="text-indigo-700 text-sm font-semibold"><%= totalVoucherGame %></span>
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Chart.js CDN -->
+<!-- Panel Perbandingan Layanan -->
+<div class="panel p-6 mt-6">
+  <div class="flex items-center justify-between">
+    <h3 class="text-lg font-semibold text-slate-900">Perbandingan Layanan (Jumlah Item Dikelola)</h3>
+    <span class="text-xs text-slate-500">Gestun • Pulsa • F&amp;B • Game</span>
+  </div>
+  <div class="mt-4 w-full h-72 md:h-80">
+    <canvas id="servicesChart" class="w-full h-full"></canvas>
+  </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Grafik Produk -->
 <script>
-  const ctx = document.getElementById('produkChart').getContext('2d');
+(function(){
+  const hasData = <%- JSON.stringify(hasData) %>;
+  if(!hasData) return;
 
-  new Chart(ctx, {
+  const labels = <%- JSON.stringify(labels) %>;
+  const values = <%- JSON.stringify(values) %>;
+
+  const canvas = document.getElementById('produkChart');
+  const ctx = canvas.getContext('2d');
+
+  const axisColor = '#1f2937'; // slate-800
+  const gridColor = '#E5E7EB'; // gray-200
+  const borderC  = '#2563EB';  // blue-600
+
+  const gradient = () => {
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, 'rgba(37,99,235,0.92)');
+    g.addColorStop(1, 'rgba(37,99,235,0.35)');
+    return g;
+  };
+
+  const chart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: <%- JSON.stringify((produkPerKategori || []).map(p => p.kategori)) %>,
+    data: { 
+      labels, 
       datasets: [{
-        label: 'Jumlah Produk',
-        data: <%- JSON.stringify((produkPerKategori || []).map(p => p.jumlah)) %>,
-        backgroundColor: 'rgba(99, 102, 241, 0.6)',
-        borderColor: 'rgba(99, 102, 241, 1)',
+        label: 'Produk',
+        data: values,
+        backgroundColor: gradient(),
+        borderColor: borderC,
         borderWidth: 1,
-        borderRadius: 6,
-        maxBarThickness: 50,
+        borderRadius: 10,
+        maxBarThickness: 58,
+        hoverBackgroundColor: 'rgba(37,99,235,1)'
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          ticks: {
-            color: '#374151',
-            font: { size: 12 }
-          },
-          grid: { display: false }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: {
-            precision: 0,
-            color: '#4B5563',
-            font: { size: 12 }
-          },
-          grid: {
-            color: '#E5E7EB'
-          }
+      responsive:true, maintainAspectRatio:false, animation:{duration:500},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0b1220', titleColor:'#fff', bodyColor:'#fff',
+          borderWidth:1, borderColor:borderC, padding:10
         }
       },
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          backgroundColor: '#1F2937',
-          titleColor: '#fff',
-          bodyColor: '#fff',
-          borderWidth: 1,
-          borderColor: '#3B82F6'
-        }
+      scales:{ 
+        x:{ grid:{display:false}, ticks:{color:axisColor, font:{size:12, weight:'500'}} }, 
+        y:{ beginAtZero:true, grid:{color:gridColor}, ticks:{color:axisColor, precision:0, font:{size:12}} } 
       }
     }
   });
+
+  new ResizeObserver(()=>{ chart.data.datasets[0].backgroundColor = gradient(); chart.update('none'); }).observe(canvas);
+})();
 </script>
+
+<script>
+(function(){
+  // Totals dari server (pastikan dikirim dari controller)
+  const totalGestun = <%- Number(typeof total_provider_gestun !== 'undefined' ? total_provider_gestun : 0) %>;
+  const totalPulsa  = <%- Number(typeof total_rate_pulsa      !== 'undefined' ? total_rate_pulsa      : 0) %>;
+  const totalFnb    = <%- Number(typeof total_voucher_fnb     !== 'undefined' ? total_voucher_fnb     : 0) %>;
+  const totalGame   = <%- Number(typeof total_voucher_game    !== 'undefined' ? total_voucher_game    : 0) %>;
+
+  const sCanvas = document.getElementById('servicesChart');
+  if (!sCanvas) return;
+
+  const sCtx = sCanvas.getContext('2d');
+  new Chart(sCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Gestun (Provider)', 'Pulsa (Rate)', 'Voucher F&B', 'Voucher Game'],
+      datasets: [{
+        label: 'Jumlah Item',
+        data: [totalGestun, totalPulsa, totalFnb, totalGame],
+        backgroundColor: ['#7C3AED','#DB2777','#059669','#4F46E5'],
+        borderWidth: 0,
+        borderRadius: 12,
+        maxBarThickness: 40
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { beginAtZero:true, grid:{ color:'#E5E7EB' }, ticks:{ color:'#1f2937', precision:0 } },
+        y: { grid: { display:false }, ticks:{ color:'#1f2937' } }
+      }
+    }
+  });
+})();
+</script>
+
 
 <%- include('../partials/admin-footer') %>

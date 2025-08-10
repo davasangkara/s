@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %></title>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind & AOS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css"/>
+  <script defer src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- Custom -->
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <style>
+    :root{
+      --brand-1:#2563EB; --brand-2:#7C3AED; --brand-3:#DB2777;
+      --ink:#0f172a; --muted:#475569; --line:#e5e7eb; --card:#ffffff;
+    }
+    html,body{scroll-behavior:smooth}
+    body{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--ink); }
+
+    /* Global helpers */
+    .soft-card{background:var(--card);border-radius:1.1rem;box-shadow:0 14px 44px rgba(2,6,23,.08);border:1px solid var(--line);transition:transform .25s ease, box-shadow .25s ease}
+    .soft-card:hover{transform:translateY(-2px);box-shadow:0 18px 56px rgba(2,6,23,.12)}
+    .glass{background:rgba(255,255,255,.75);backdrop-filter:blur(8px)}
+    .blob{position:absolute;border-radius:9999px;filter:blur(32px);opacity:.35;z-index:-1}
+    .img-cover{width:100%;height:100%;object-fit:cover;display:block}
+    .img-contain{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
+    .brand-gradient{background:linear-gradient(135deg,var(--brand-1) 0%,var(--brand-2) 55%,var(--brand-3) 100%)}
+
+    /* Nav */
+    .nav-link{position:relative;display:inline-flex;align-items:center;gap:.4rem;padding-bottom:6px;color:#334155;transition:color .25s ease}
+    .nav-link:hover{color:var(--brand-1)}
+    .nav-link::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--brand-1);transition:width .25s ease}
+    .nav-link:hover::after,.nav-link.active::after{width:100%}
+    .mobile-link{display:block;color:#334155;padding:.6rem .6rem;border-radius:.6rem;transition:.2s}
+    .mobile-link:hover{color:var(--brand-1);background:#F3F4F6}
+
+    /* Mobile slide menu */
+    #mobile-menu{max-height:0;overflow:hidden;transition:max-height .35s ease}
+    #mobile-menu.open{max-height:520px}
+
+    /* Section divider */
+    .section{position:relative}
+    .section::before{content:"";position:absolute;left:0;right:0;top:-40px;height:1px;background:linear-gradient(90deg, transparent, #e5e7eb, transparent)}
+
+    /* Motion reduce */
+    @media (prefers-reduced-motion: reduce){
+      .soft-card, .nav-link::after { transition:none }
+      #mobile-menu{ transition:none }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-b from-white via-[#F7F9FF] to-[#FDF7FF] antialiased">
+<script>
+  window.addEventListener('DOMContentLoaded',()=>{
+    if(window.AOS){ AOS.init({ once:true, duration:620, easing:'cubic-bezier(.2,.7,.25,1)' }); }
+  });
+</script>
+
+<!-- ============== HEADER ============== -->
+<header class="sticky top-0 z-50" data-aos="fade-down">
+  <div class="h-1 bg-gradient-to-r from-blue-600 via-fuchsia-500 to-purple-600"></div>
+
+  <div id="topbar" class="backdrop-blur bg-white/85 border-b border-gray-100">
+    <div class="container mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 group" aria-label="DigitalConvert - Beranda">
+        <img src="/images/logo.svg" alt="" class="w-8 h-8 hidden sm:block opacity-90 group-hover:opacity-100 transition">
+        <span class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-indigo-700 to-fuchsia-700">
+          DigitalConvert
+        </span>
+      </a>
+
+      <% const cp = (typeof currentPath!=='undefined' && currentPath) || ''; %>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="/" class="nav-link <%= cp==='/' ? 'active text-blue-700' : '' %>">Beranda</a>
+        <a href="/simulasi-gestun" class="nav-link <%= cp.startsWith('/simulasi-gestun') ? 'active text-blue-700' : '' %>">Simulasi Gestun</a>
+        <a href="/public/simulasi-convert" class="nav-link <%= cp.includes('/public/simulasi-convert') ? 'active text-blue-700' : '' %>">Simulasi Convert</a>
+        <a href="/simulasi-voucher" class="nav-link <%= cp.startsWith('/simulasi-voucher') ? 'active text-blue-700' : '' %>">Simulasi Voucher F&amp;B</a>
+        <a href="/tentang" class="nav-link <%= cp.startsWith('/tentang') ? 'active text-blue-700' : '' %>">Tentang Kami</a>
+
+        <% if (typeof categories !== 'undefined' && categories.length) { %>
+          <% categories.forEach(cat => { %>
+            <a href="/kategori/<%= cat.slug %>" class="nav-link <%= cp.includes('/kategori/'+cat.slug) ? 'active text-blue-700' : '' %>"><%= cat.name %></a>
+          <% }) %>
+        <% } %>
+
+        <a href="/admin/login" class="nav-link" aria-label="Login Admin">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H3m6-6l-6 6 6 6m9-6a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Login
+        </a>
+      </nav>
+
+      <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-50 text-gray-700"
+              aria-expanded="false" aria-controls="mobile-menu" aria-label="Buka menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+
+    <div id="mobile-menu" class="md:hidden bg-white/95 border-t border-gray-100 px-4 pb-4 space-y-2">
+      <a class="mobile-link" href="/">Beranda</a>
+      <a class="mobile-link" href="/simulasi-gestun">Simulasi Gestun</a>
+      <a class="mobile-link" href="/public/simulasi-convert">Simulasi Convert</a>
+      <a class="mobile-link" href="/simulasi-voucher">Simulasi Voucher F&amp;B</a>
+      <a class="mobile-link" href="/tentang">Tentang Kami</a>
+      <% if (typeof categories !== 'undefined' && categories.length) { %>
+        <% categories.forEach(cat => { %>
+          <a class="mobile-link" href="/kategori/<%= cat.slug %>"><%= cat.name %></a>
+        <% }) %>
+      <% } %>
+      <a class="mobile-link" href="/admin/login">Login</a>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Mobile slide
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const menu    = document.getElementById('mobile-menu');
+  menuBtn?.addEventListener('click', ()=>{
+    const ex = menuBtn.getAttribute('aria-expanded') === 'true';
+    menuBtn.setAttribute('aria-expanded', String(!ex));
+    menu.classList.toggle('open');
+  });
+
+  // Header shadow on scroll
+  const topbar = document.getElementById('topbar');
+  let lastY = 0;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY || 0;
+    if (y > 6 && lastY <= 6) topbar.classList.add('shadow-md');
+    if (y <= 6 && lastY > 6) topbar.classList.remove('shadow-md');
+    lastY = y;
+  });
+</script>
+
+<!-- ============== MAIN ============== -->
+<main class="container mx-auto max-w-7xl px-4 py-12 relative">
+  <!-- blobs -->
+  <span class="blob w-64 h-64 bg-blue-300 -top-8 -left-12"></span>
+  <span class="blob w-72 h-72 bg-pink-300 top-1/3 -right-10"></span>
+  <span class="blob w-56 h-56 bg-purple-300 bottom-10 left-1/3"></span>
+
+  <!-- HERO -->
+  <section class="grid lg:grid-cols-2 gap-12 items-center" data-aos="fade-up">
+    <div>
+      <span class="inline-flex items-center gap-2 text-xs tracking-widest uppercase bg-blue-100 text-blue-700 px-3 py-1 rounded-full mb-3">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span> Tentang Kami
+      </span>
+      <h1 class="text-3xl md:text-5xl font-extrabold leading-tight text-gray-900">
+        Platform <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600">Digital Convert</span> yang <span class="underline decoration-wavy decoration-pink-400">cepat</span> & transparan
+      </h1>
+      <p class="mt-5 text-gray-600 text-lg">
+        Tukar pulsa, gestun paylater secara tertib, serta voucher F&amp;B & game—semua dengan alur yang mudah dan jelas.
+      </p>
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a href="/public/simulasi-convert" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow hover:shadow-lg transition">Coba Simulasi Convert</a>
+        <a href="/simulasi-gestun" class="px-5 py-2.5 rounded-xl border border-blue-200 text-blue-700 bg-white hover:bg-blue-50 transition">Simulasi Gestun</a>
+      </div>
+
+      <!-- Highlights -->
+      <div class="mt-8 grid grid-cols-3 gap-4">
+        <div class="soft-card p-4 text-center">
+          <div class="text-2xl font-bold">Cepat</div>
+          <div class="text-xs text-gray-500">Proses ringkas</div>
+        </div>
+        <div class="soft-card p-4 text-center">
+          <div class="text-2xl font-bold">Transparan</div>
+          <div class="text-xs text-gray-500">Tanpa biaya tersembunyi</div>
+        </div>
+        <div class="soft-card p-4 text-center">
+          <div class="text-2xl font-bold">Responsif</div>
+          <div class="text-xs text-gray-500">Dukungan ramah</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collage -->
+    <div class="relative" data-aos="zoom-in">
+      <div class="absolute -inset-3 bg-gradient-to-br from-blue-100 via-white to-purple-100 rounded-3xl blur-md -z-10"></div>
+      <div class="soft-card p-3">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="col-span-2">
+            <div class="aspect-[4/3] rounded-xl ring-1 ring-black/5 grid place-items-center bg-white">
+              <img src="/images/payments/logo1.jpg" alt="Logo brand" class="img-contain p-4" loading="lazy" decoding="async">
+            </div>
+          </div>
+          <div>
+            <div class="aspect-[3/4] overflow-hidden rounded-xl ring-1 ring-black/5">
+              <img src="/images/tentang-2.jpg" alt="UI yang jelas" class="img-cover" loading="lazy" decoding="async">
+            </div>
+          </div>
+          <div>
+            <div class="aspect-[1/1] overflow-hidden rounded-xl ring-1 ring-black/5">
+              <img src="/images/tentang-3.jpg" alt="Voucher & top-up" class="img-cover" loading="lazy" decoding="async">
+            </div>
+          </div>
+          <div class="col-span-2">
+            <div class="aspect-[21/9] overflow-hidden rounded-xl ring-1 ring-black/5">
+              <img src="/images/keunggulan.jpg" alt="Keunggulan layanan" class="img-cover" loading="lazy" decoding="async">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- avatars -->
+      <div class="glass absolute -bottom-4 left-4 rounded-xl shadow p-3 border flex items-center gap-2">
+        <div class="flex -space-x-2">
+          <img src="/images/avatars/a1.jpg" class="w-8 h-8 rounded-full ring-2 ring-white" alt="user 1" loading="lazy">
+          <img src="/images/avatars/a2.jpg" class="w-8 h-8 rounded-full ring-2 ring-white" alt="user 2" loading="lazy">
+          <img src="/images/avatars/a3.jpg" class="w-8 h-8 rounded-full ring-2 ring-white" alt="user 3" loading="lazy">
+        </div>
+        <span class="text-xs text-gray-700"><strong>1.2K+</strong> transaksi terbantu</span>
+      </div>
+
+      <!-- testimonial -->
+      <div class="soft-card absolute -right-4 -bottom-6 max-w-xs p-4 border">
+        <p class="text-sm text-gray-700">“Bikin proses convert makin gampang. UI-nya juga enak!”</p>
+        <div class="mt-2 text-xs text-gray-400">— Pengguna DigitalConvert</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIAPA KAMI -->
+  <section class="section mt-20 grid lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 soft-card p-6" data-aos="fade-up">
+      <h2 class="text-2xl font-semibold mb-3">Siapa Kami</h2>
+      <p class="text-gray-600">
+        Kami tim kecil yang fokus membangun layanan finansial digital ringan—mengoptimalkan aset digital seperti pulsa & voucher,
+        serta menyediakan opsi gestun paylater yang tertib sesuai kebijakan platform. Fokus kami:
+        <span class="font-semibold">kemudahan</span>, <span class="font-semibold">kejelasan</span>, dan <span class="font-semibold">keamanan</span>.
+      </p>
+      <p class="mt-3 text-gray-600">
+        Layanan ini ditujukan untuk kebutuhan pribadi. Mohon selalu mematuhi
+        <span class="font-medium">syarat & ketentuan</span> platform asal dan gunakan secara bertanggung jawab.
+      </p>
+    </div>
+
+    <div class="soft-card p-6 space-y-4" data-aos="fade-left">
+      <h3 class="text-lg font-semibold">Keunggulan</h3>
+      <ul class="space-y-2 text-gray-600">
+        <li>• Mobile-first, antarmuka sederhana</li>
+        <li>• Rate & biaya ditampilkan jelas</li>
+        <li>• Status transaksi realtime</li>
+        <li>• Bantuan WA/Telegram</li>
+      </ul>
+      <div class="rounded-xl overflow-hidden">
+        <img src="/images/keunggulan.jpg" class="w-full h-32 object-cover" alt="Keunggulan" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- LAYANAN -->
+  <section class="section mt-20" data-aos="fade-up">
+    <h2 class="text-2xl font-semibold mb-6">Layanan Kami</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="soft-card p-5">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 grid place-items-center">
+            <img src="/images/icons/convert.png" alt="" class="w-5 h-5">
+          </span>
+          <div class="text-blue-700 font-semibold">Convert Pulsa</div>
+        </div>
+        <p class="text-sm text-gray-600">Tukar pulsa ke saldo sesuai rate terkini dengan alur jelas.</p>
+      </div>
+      <div class="soft-card p-5">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-100 to-pink-200 grid place-items-center">
+            <img src="/images/icons/gestun.png" alt="" class="w-5 h-5">
+          </span>
+          <div class="text-pink-700 font-semibold">Gestun Paylater</div>
+        </div>
+        <p class="text-sm text-gray-600">Opsi pencairan limit paylater secara tertib & bijak.</p>
+      </div>
+      <div class="soft-card p-5">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 grid place-items-center">
+            <img src="/images/icons/fnb.png" alt="" class="w-5 h-5">
+          </span>
+          <div class="text-emerald-700 font-semibold">Voucher F&amp;B</div>
+        </div>
+        <p class="text-sm text-gray-600">Voucher makanan & minuman dari berbagai brand.</p>
+      </div>
+      <div class="soft-card p-5">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 grid place-items-center">
+            <img src="/images/icons/game.png" alt="" class="w-5 h-5">
+          </span>
+          <div class="text-violet-700 font-semibold">Voucher Game</div>
+        </div>
+        <p class="text-sm text-gray-600">Top-up & voucher game populer dengan nominal fleksibel.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CARA KERJA -->
+  <section class="section mt-20" data-aos="fade-up">
+    <h2 class="text-2xl font-semibold mb-6">Cara Kerja</h2>
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="soft-card p-5">
+        <div class="text-xs uppercase tracking-wider text-gray-500">Langkah 1</div>
+        <div class="font-semibold mt-1">Pilih Layanan</div>
+        <p class="text-sm text-gray-600 mt-1">Convert pulsa, gestun paylater, atau voucher.</p>
+      </div>
+      <div class="soft-card p-5">
+        <div class="text-xs uppercase tracking-wider text-gray-500">Langkah 2</div>
+        <div class="font-semibold mt-1">Simulasi & Form</div>
+        <p class="text-sm text-gray-600 mt-1">Cek estimasi & isi data yang diperlukan.</p>
+      </div>
+      <div class="soft-card p-5">
+        <div class="text-xs uppercase tracking-wider text-gray-500">Langkah 3</div>
+        <div class="font-semibold mt-1">Konfirmasi</div>
+        <p class="text-sm text-gray-600 mt-1">Ikuti instruksi transfer/penukaran.</p>
+      </div>
+      <div class="soft-card p-5">
+        <div class="text-xs uppercase tracking-wider text-gray-500">Langkah 4</div>
+        <div class="font-semibold mt-1">Selesai</div>
+        <p class="text-sm text-gray-600 mt-1">Transaksi diproses & status terupdate.</p>
+      </div>
+    </div>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="/public/simulasi-convert" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">Mulai Convert</a>
+      <a href="/simulasi-gestun" class="px-5 py-2.5 rounded-xl bg-white border hover:bg-gray-50 transition">Mulai Gestun</a>
+      <a href="/simulasi-voucher" class="px-5 py-2.5 rounded-xl bg-white border hover:bg-gray-50 transition">Voucher</a>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section mt-20" data-aos="zoom-in">
+    <div class="soft-card rounded-2xl p-8 text-white relative overflow-hidden brand-gradient">
+      <div class="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-white/10"></div>
+      <h3 class="text-3xl font-bold">Siap mulai transaksi yang lebih mudah?</h3>
+      <p class="mt-2 text-white/90">Coba simulasi sekarang, atau hubungi kami untuk bantuan.</p>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a href="/public/simulasi-convert" class="px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 transition">Coba Simulasi</a>
+        <a href="https://wa.me/62812XXXXXXX" class="px-5 py-2.5 rounded-xl ring-1 ring-white/60 hover:bg-white/10 transition">Chat WhatsApp</a>
+      </div>
+      <p class="mt-3 text-xs text-white/80">Jam dukungan: 08.00–22.00 WIB</p>
+    </div>
+  </section>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer class="mt-20 border-t">
+  <div class="container mx-auto max-w-7xl px-4 py-8 text-sm text-gray-500">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>© <%= new Date().getFullYear() %> DigitalConvert. Semua hak dilindungi.</div>
+      <div class="flex gap-4">
+        <a href="/tentang" class="hover:text-gray-700">Tentang</a>
+        <a href="/kebijakan-privasi" class="hover:text-gray-700">Kebijakan Privasi</a>
+        <a href="/syarat-ketentuan" class="hover:text-gray-700">S&K</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

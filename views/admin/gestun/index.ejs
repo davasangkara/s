@@ -1,0 +1,210 @@
+<%- include('../../partials/admin-header', { title }) %>
+
+<%
+  const list = (providers||[]).map(p => ({ id: p.id, name: p.name, rate: Number(p.rate_pct||0) }));
+  const total = list.length;
+  const rates = list.map(x=>x.rate);
+  const avg = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : 0;
+  const max = rates.length ? Math.max(...rates) : 0;
+  const min = rates.length ? Math.min(...rates) : 0;
+%>
+
+<style>
+  /* Chips warna */
+  .chip{font-size:.75rem;padding:.45rem .7rem;border-radius:.7rem;border:1px solid #e5e7eb;background:#fff;color:#1f2937;transition:.2s}
+  .chip[data-range="all"].active   {background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
+  .chip[data-range="lt25"].active  {background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+  .chip[data-range="25-5"].active  {background:#fffbeb;color:#92400e;border-color:#fde68a}
+  .chip[data-range="gt5"].active   {background:#fff1f2;color:#9f1239;border-color:#fecdd3}
+
+  /* Baris tabel dengan garis aksen kiri yang dinamis */
+  tr.row-colored{position:relative}
+  tr.row-colored::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+    background: hsl(var(--tone) / 0.95); border-radius:0 8px 8px 0;
+  }
+
+  /* Pill rate warna dinamis pakai --tone */
+  .rate-pill{
+    background: hsl(var(--tone) / .12);
+    color: hsl(var(--tone) / .95);
+    border: 1px solid hsl(var(--tone) / .28);
+  }
+
+  /* Header gradien lembut */
+  .ribbon { height: 8px; border-radius: 9999px;
+    background: linear-gradient(90deg,#38bdf8 0%,#6366f1 30%,#a855f7 60%,#fb7185 100%);
+    filter: saturate(120%);
+  }
+</style>
+
+<div class="max-w-6xl mx-auto mt-6">
+  <div class="ribbon mb-6"></div>
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Kelola Gestun</h1>
+      <p class="text-sm text-slate-500">Atur provider & rate potongan. <span class="font-medium text-slate-700"><%= total %></span> provider.</p>
+    </div>
+    <div class="flex w-full md:w-auto items-center gap-2">
+      <div class="relative flex-1 md:w-64">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/></svg>
+        <input id="searchBox" placeholder="Cari provider…" class="w-full pl-9 pr-3 py-2 rounded-xl border focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+      </div>
+
+      <select id="sortSel" class="border rounded-xl px-3 py-2">
+        <option value="name-asc">Nama A–Z</option>
+        <option value="name-desc">Nama Z–A</option>
+        <option value="rate-desc">Rate tertinggi</option>
+        <option value="rate-asc">Rate terendah</option>
+      </select>
+
+      <a href="/admin/gestun/new" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white hover:brightness-110 shadow">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Tambah
+      </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rata-rata Rate</div>
+      <div class="mt-1 text-2xl font-extrabold text-indigo-700"><%= avg.toFixed(2) %>%</div>
+    </div>
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rate Tertinggi</div>
+      <div class="mt-1 text-2xl font-extrabold text-rose-600"><%= max.toFixed(2) %>%</div>
+    </div>
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rate Terendah</div>
+      <div class="mt-1 text-2xl font-extrabold text-emerald-600"><%= min.toFixed(2) %>%</div>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-xs text-slate-500 mr-1">Filter cepat:</span>
+    <button data-range="all"  class="chip active">Semua</button>
+    <button data-range="lt25" class="chip">Rate &lt; 2.5%</button>
+    <button data-range="25-5" class="chip">2.5% – 5%</button>
+    <button data-range="gt5"  class="chip">Rate &gt; 5%</button>
+  </div>
+
+  <!-- Tabel -->
+  <div class="bg-white rounded-2xl shadow ring-1 ring-black/5 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table id="tbl" class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold">Nama Provider</th>
+            <th class="px-4 py-3 text-left font-semibold">Rate (%)</th>
+            <th class="px-4 py-3 text-right font-semibold">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tblBody" class="divide-y">
+          <% list.forEach(p => { %>
+            <tr class="hover:bg-slate-50/60 row-item row-colored" data-name="<%= p.name.toLowerCase() %>" data-rate="<%= p.rate %>">
+              <td class="px-4 py-3 font-medium text-slate-900"><%= p.name %></td>
+              <td class="px-4 py-3">
+                <span class="rate-pill inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m-7-7h14"/></svg>
+                  <%= p.rate.toFixed(2) %>%
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2 justify-end">
+                  <a href="/admin/gestun/edit/<%= p.id %>" class="px-3 py-1.5 rounded-lg bg-white border hover:bg-slate-50">Edit</a>
+                  <form action="/admin/gestun/delete/<%= p.id %>" method="POST" onsubmit="return confirm('Hapus provider ini?')">
+                    <button class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Hapus</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+
+          <% if (total === 0) { %>
+            <tr>
+              <td colspan="3" class="px-4 py-14">
+                <div class="text-center">
+                  <div class="inline-grid w-14 h-14 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
+                  </div>
+                  <p class="font-semibold text-slate-800">Belum ada provider</p>
+                  <p class="text-sm text-slate-500">Tambahkan provider gestun pertama Anda.</p>
+                  <a href="/admin/gestun/new" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white hover:brightness-110">Tambah Provider</a>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const q = document.getElementById('searchBox');
+  const sortSel = document.getElementById('sortSel');
+  const chips = Array.from(document.querySelectorAll('.chip'));
+  const body = document.getElementById('tblBody');
+
+  /* Hue dinamis (0–10% -> merah→hijau terbalik, kita pilih hijau(140) → merah(0)) */
+  function hueFromRate(r){
+    const clamped = Math.max(0, Math.min(10, r));       // fokus 0–10%
+    const t = 1 - (clamped / 10);                       // 0%=1 (green) ; 10%=0 (red)
+    return 140 * t;                                     // 140≈emerald hue
+  }
+  function paintRow(row){
+    const rate = parseFloat(row.dataset.rate||'0');
+    const hue = hueFromRate(rate).toFixed(0);
+    row.style.setProperty('--tone', `${hue} 85% 45%`);
+    const pill = row.querySelector('.rate-pill');
+    pill?.style.setProperty('--tone', `${hue} 85% 45%`);
+  }
+
+  function rows(){ return Array.from(body.querySelectorAll('.row-item')); }
+  rows().forEach(paintRow);
+
+  function applyFilter(){
+    const val = (q.value||'').toLowerCase().trim();
+    const active = chips.find(c=>c.classList.contains('active'))?.dataset.range || 'all';
+    rows().forEach(r=>{
+      const name = r.dataset.name || '';
+      const rate = parseFloat(r.dataset.rate||'0');
+      let ok = name.includes(val);
+      if (active==='lt25') ok = ok && rate < 2.5;
+      if (active==='25-5') ok = ok && rate >= 2.5 && rate <= 5;
+      if (active==='gt5')  ok = ok && rate > 5;
+      r.style.display = ok ? '' : 'none';
+    });
+  }
+
+  function applySort(){
+    const v = sortSel.value;
+    const arr = rows().filter(r=>r.style.display!=='none');
+    const byName = (a,b)=> a.dataset.name.localeCompare(b.dataset.name);
+    const byRate = (a,b)=> parseFloat(a.dataset.rate)-parseFloat(b.dataset.rate);
+    arr.sort(v==='name-asc' ? byName
+            : v==='name-desc' ? (a,b)=>byName(b,a)
+            : v==='rate-asc' ? byRate
+            : (a,b)=>byRate(b,a));
+    arr.forEach(r=>body.appendChild(r));
+  }
+
+  q?.addEventListener('input', ()=>{ applyFilter(); applySort(); });
+  sortSel?.addEventListener('change', applySort);
+  chips.forEach(c=>c.addEventListener('click', ()=>{
+    chips.forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    applyFilter(); applySort();
+  }));
+
+  // init
+  applyFilter(); applySort();
+})();
+</script>
+
+<%- include('../../partials/admin-footer') %>

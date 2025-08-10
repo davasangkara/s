@@ -1,0 +1,168 @@
+<%- include('../../partials/admin-header', { title }) %>
+
+<%
+  const rows = (rates||[]).map(r => ({ id:r.id, provider:r.provider, rate: Number(r.rate_pct||0) }));
+  const total = rows.length;
+  const vals  = rows.map(x=>x.rate);
+  const avg   = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  const max   = vals.length ? Math.max(...vals) : 0;
+  const min   = vals.length ? Math.min(...vals) : 0;
+%>
+
+<style>
+  .ribbon{height:8px;border-radius:9999px;background:linear-gradient(90deg,#22c55e 0%,#f59e0b 40%,#ef4444 100%)}
+  .chip{font-size:.75rem;padding:.45rem .7rem;border-radius:.7rem;border:1px solid #e5e7eb;background:#fff;color:#1f2937;transition:.2s}
+  .chip.active[data-r="all"] {background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
+  .chip.active[data-r="lt70"]{background:#fff1f2;color:#9f1239;border-color:#fecdd3}
+  .chip.active[data-r="70-85"]{background:#fffbeb;color:#92400e;border-color:#fde68a}
+  .chip.active[data-r="gt85"]{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+
+  tr.row-colored{position:relative}
+  tr.row-colored::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:hsl(var(--tone)/.95);border-radius:0 8px 8px 0}
+
+  .pill{background:hsl(var(--tone)/.14);color:hsl(var(--tone)/.98);border:1px solid hsl(var(--tone)/.28)}
+</style>
+
+<div class="max-w-6xl mx-auto mt-6">
+  <div class="ribbon mb-6"></div>
+
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Rate Pulsa</h1>
+      <p class="text-sm text-slate-500">Kelola provider & rate <em>diterima</em>. Total: <span class="font-medium text-slate-700"><%= total %></span></p>
+    </div>
+    <div class="flex w-full md:w-auto items-center gap-2">
+      <div class="relative flex-1 md:w-64">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/></svg>
+        <input id="q" placeholder="Cari provider…" class="w-full pl-9 pr-3 py-2 rounded-xl border focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+      </div>
+      <select id="sortSel" class="border rounded-xl px-3 py-2">
+        <option value="name-asc">Nama A–Z</option>
+        <option value="name-desc">Nama Z–A</option>
+        <option value="rate-desc">Rate diterima tertinggi</option>
+        <option value="rate-asc">Rate diterima terendah</option>
+      </select>
+      <a href="/admin/pulsa/new" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white hover:brightness-110 shadow">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Tambah
+      </a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Rata-rata Diterima</div>
+      <div class="mt-1 text-2xl font-extrabold text-emerald-600"><%= avg.toFixed(2) %>%</div>
+    </div>
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Tertinggi</div>
+      <div class="mt-1 text-2xl font-extrabold text-emerald-700"><%= max.toFixed(2) %>%</div>
+    </div>
+    <div class="rounded-2xl bg-white ring-1 ring-black/5 p-4 shadow-sm">
+      <div class="text-xs text-slate-500">Terendah</div>
+      <div class="mt-1 text-2xl font-extrabold text-rose-600"><%= min.toFixed(2) %>%</div>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-xs text-slate-500 mr-1">Filter cepat:</span>
+    <button class="chip active" data-r="all">Semua</button>
+    <button class="chip" data-r="lt70">Diterima &lt; 70%</button>
+    <button class="chip" data-r="70-85">70% – 85%</button>
+    <button class="chip" data-r="gt85">Diterima &gt; 85%</button>
+  </div>
+
+  <!-- Tabel -->
+  <div class="bg-white rounded-2xl shadow ring-1 ring-black/5 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold">Provider</th>
+            <th class="px-4 py-3 text-left font-semibold">Rate Diterima</th>
+            <th class="px-4 py-3 text-right font-semibold">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tblBody" class="divide-y">
+          <% rows.forEach(r => { %>
+            <tr class="hover:bg-slate-50/60 row row-colored" data-name="<%= r.provider.toLowerCase() %>" data-rate="<%= r.rate %>">
+              <td class="px-4 py-3 font-medium text-slate-900"><%= r.provider %></td>
+              <td class="px-4 py-3">
+                <span class="pill inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold"><%= r.rate.toFixed(2) %>%</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2 justify-end">
+                  <a href="/admin/pulsa/edit/<%= r.id %>" class="px-3 py-1.5 rounded-lg bg-white border hover:bg-slate-50">Edit</a>
+                  <form action="/admin/pulsa/delete/<%= r.id %>" method="POST" onsubmit="return confirm('Hapus data ini?')">
+                    <button class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Hapus</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+
+          <% if (total === 0) { %>
+            <tr><td colspan="3" class="px-4 py-14 text-center text-slate-500">Belum ada data.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const body = document.getElementById('tblBody');
+  const q = document.getElementById('q');
+  const sortSel = document.getElementById('sortSel');
+  const chips = Array.from(document.querySelectorAll('.chip'));
+
+  // Hue: 60%→merah(0), 95%→hijau(140)
+  function hueFromAccept(p){
+    const v = Math.max(60, Math.min(95, p));
+    const t = (v - 60) / (95 - 60); // 0..1
+    return 0 + (140 * t);
+  }
+  function rows(){ return Array.from(body.querySelectorAll('.row')); }
+  function paint(r){
+    const rate = parseFloat(r.dataset.rate||'0');
+    const hue = hueFromAccept(rate).toFixed(0);
+    r.style.setProperty('--tone', `${hue} 85% 45%`);
+    r.querySelector('.pill')?.style.setProperty('--tone', `${hue} 85% 45%`);
+  }
+  rows().forEach(paint);
+
+  function filter(){
+    const val = (q.value||'').toLowerCase().trim();
+    const rg = document.querySelector('.chip.active')?.dataset.r || 'all';
+    rows().forEach(r=>{
+      const name = r.dataset.name||'';
+      const rate = parseFloat(r.dataset.rate||'0');
+      let ok = name.includes(val);
+      if(rg==='lt70')  ok = ok && rate < 70;
+      if(rg==='70-85') ok = ok && rate >= 70 && rate <= 85;
+      if(rg==='gt85')  ok = ok && rate > 85;
+      r.style.display = ok ? '' : 'none';
+    });
+  }
+  function sort(){
+    const v = sortSel.value;
+    const arr = rows().filter(r=>r.style.display!=='none');
+    const byName=(a,b)=>a.dataset.name.localeCompare(b.dataset.name);
+    const byRate=(a,b)=>parseFloat(a.dataset.rate)-parseFloat(b.dataset.rate);
+    arr.sort(v==='name-asc'?byName : v==='name-desc'?(a,b)=>byName(b,a) : v==='rate-asc'?byRate : (a,b)=>byRate(b,a));
+    arr.forEach(r=>body.appendChild(r));
+  }
+
+  q.addEventListener('input', ()=>{ filter(); sort(); });
+  sortSel.addEventListener('change', sort);
+  chips.forEach(c=>c.addEventListener('click', ()=>{ chips.forEach(x=>x.classList.remove('active')); c.classList.add('active'); filter(); sort(); }));
+
+  filter(); sort();
+})();
+</script>
+
+<%- include('../../partials/admin-footer') %>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title><%= title || '500 — Terjadi kesalahan' %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center p-6">
+  <div class="relative max-w-2xl w-full">
+    <div class="absolute -top-8 -left-8 w-48 h-48 bg-rose-300/30 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-10 -right-10 w-56 h-56 bg-amber-300/30 rounded-full blur-3xl"></div>
+
+    <div class="relative bg-white/90 backdrop-blur rounded-2xl shadow-xl border border-slate-100 px-6 py-8">
+      <div class="text-center">
+        <div class="text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-amber-600">
+          500
+        </div>
+        <h1 class="mt-2 text-2xl font-bold text-slate-900">Ups, ada yang salah</h1>
+        <p class="mt-2 text-slate-600">Kami mengalami kendala saat memproses permintaanmu.</p>
+
+        <% if (typeof message !== 'undefined' && message) { %>
+          <p class="mt-2 text-sm text-rose-700/90 font-medium">Detail: <%= message %></p>
+        <% } %>
+
+        <% if (typeof stack !== 'undefined' && stack) { %>
+          <details class="mt-4 text-left">
+            <summary class="cursor-pointer text-sm text-slate-700 hover:underline">Lihat stacktrace (dev)</summary>
+            <pre class="mt-2 p-3 bg-slate-900 text-slate-100 rounded-lg overflow-auto text-xs leading-relaxed"><%= stack %></pre>
+          </details>
+        <% } %>
+
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <a href="/" class="px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow">Ke Beranda</a>
+          <% if (typeof admin !== 'undefined' && admin) { %>
+            <a href="/admin/dashboard" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50">
+              Dashboard Admin
+            </a>
+          <% } %>
+          <a href="javascript:location.reload()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100">Muat Ulang</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -97,5 +97,58 @@ router.get('/kategori/:slug', async (req, res) => {
   });
 });
 
+router.get('/simulasi-gestun', async (req, res) => {
+  let categories = [];
+  try {
+    const [cats] = await db.query('SELECT name, slug FROM categories ORDER BY name');
+    categories = cats;
+  } catch(e){}
+
+  const [providers] = await db.query('SELECT id, name, rate_pct FROM gestun_providers ORDER BY name ASC');
+
+  res.render('public/simulasi-gestun', {
+    title: 'Simulasi Gestun',
+    categories,
+    providers
+  });
+});
+
+// routes/publicRoutes.js (tambahkan/replace handler ini)
+router.get('/public/simulasi-convert', async (req, res) => {
+  let categories = [];
+  try {
+    const [cats] = await db.query('SELECT name, slug FROM categories ORDER BY name');
+    categories = cats;
+  } catch(e){}
+
+  const [rates] = await db.query('SELECT id, provider, rate_pct FROM pulsa_rates ORDER BY provider ASC');
+
+  res.render('public/simulasi-convert', {
+    title: 'Simulasi Convert Pulsa',
+    categories,
+    rates
+  });
+});
+
+// routes/publicRoutes.js (tambahkan)
+router.get('/simulasi-voucher', async (req, res) => {
+  let categories = [];
+  try {
+    const [cats] = await db.query('SELECT name, slug FROM categories ORDER BY name');
+    categories = cats;
+  } catch(e){}
+
+  const [all] = await db.query('SELECT id, type, brand, discount_pct FROM voucher_rates ORDER BY type, brand');
+  const fnb = all.filter(v => v.type === 'FNB');
+  const game = all.filter(v => v.type === 'GAME');
+
+  res.render('public/simulasi-voucher', {
+    title: 'Simulasi Voucher (F&B + Game)',
+    categories,
+    fnb,
+    game
+  });
+});
+
 
 module.exports = router;
