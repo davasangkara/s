@@ -6,14 +6,17 @@ require('dotenv').config();
 
 // Routers
 const publicRoutes        = require('./routes/publicRoutes');
-const adminRoutes         = require('./routes/adminRoutes');
-const adminCategoryRoutes = require('./routes/adminCategoryRoutes');
-const adminProductRoutes  = require('./routes/adminProductRoutes');
-const adminGestunRoutes   = require('./routes/adminGestunRoutes');
-const adminPulsaRoutes    = require('./routes/adminPulsaRoutes');
-const adminVoucherRoutes  = require('./routes/adminVoucherRoutes');
+const adminRoutes         = require('./routes/adminRoutes');          // berisi /admin/login, /admin/dashboard, dll
+const adminCategoryRoutes = require('./routes/adminCategoryRoutes');  // fitur
+const adminProductRoutes  = require('./routes/adminProductRoutes');   // fitur
+const adminGestunRoutes   = require('./routes/adminGestunRoutes');    // fitur
+const adminPulsaRoutes    = require('./routes/adminPulsaRoutes');     // fitur
+const adminVoucherRoutes  = require('./routes/adminVoucherRoutes');   // fitur
 
 const app = express();
+
+// Penting di lingkungan HTTPS (Render, Nginx, dll)
+app.set('trust proxy', 1);
 
 /* ---------- Core middleware ---------- */
 app.use(express.urlencoded({ extended: true }));
@@ -27,7 +30,12 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'convert-app-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // set true jika pakai HTTPS + proxy
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production', // true di produksi (HTTPS)
+    maxAge: 1000 * 60 * 60 * 12, // 12 jam
+  }
 }));
 
 // Locals untuk EJS
@@ -41,6 +49,15 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+/* ---------- Guard admin fitur (kecuali /admin/login di adminRoutes) ---------- */
+function requireLogin(req, res, next) {
+  if (!req.session || !req.session.adminId) {
+    const nextUrl = encodeURIComponent(req.originalUrl || '/admin/dashboard');
+    return res.redirect(`/admin/login?next=${nextUrl}`);
+  }
+  next();
+}
+
 /* ---------- Routes ---------- */
 // Public
 app.use('/', publicRoutes);
@@ -48,39 +65,43 @@ app.get('/tentang', (req, res) =>
   res.render('public/tentang', { title: 'Tentang Kami' })
 );
 
-// Admin core
+// Admin core (punya halaman login & dashboard sendiri)
 app.use('/admin', adminRoutes);
 
-// Admin features
-app.use('/admin/kategori', adminCategoryRoutes);
-app.use('/admin/produk',   adminProductRoutes);
-app.use('/admin/gestun',   adminGestunRoutes);   // /, /new, /edit/:id, /delete/:id
-app.use('/admin/pulsa',    adminPulsaRoutes);    // /, /new, /edit/:id, /delete/:id
-app.use('/admin/voucher',  adminVoucherRoutes);  // /, /new, /edit/:id, /delete/:id
+// Debug siapa saya (cek session cepat)
+app.get('/admin/whoami', (req, res) => {
+  res.json({
+    adminId: req.session?.adminId || null,
+    admin: req.session?.admin || null,
+  });
+});
 
-/* ---------- Aliases untuk URL lama (biar link lama tetap jalan) ---------- */
+// Admin features (wajib login)
+app.use('/admin/kategori', requireLogin, adminCategoryRoutes);
+app.use('/admin/produk',   requireLogin, adminProductRoutes);
+app.use('/admin/gestun',   requireLogin, adminGestunRoutes);
+app.use('/admin/pulsa',    requireLogin, adminPulsaRoutes);
+app.use('/admin/voucher',  requireLogin, adminVoucherRoutes);
+
+/* ---------- Aliases untuk URL lama ---------- */
 app.get('/admin/gestun/providers', (req, res) => res.redirect(301, '/admin/gestun'));
 app.get('/admin/rate-pulsa',       (req, res) => res.redirect(301, '/admin/pulsa'));
 app.get('/admin/vouchers',         (req, res) => res.redirect(301, '/admin/voucher'));
 
-/* ---------- 404 & Error handler ---------- */
-app.use((req, res) => {
-  res.status(404).render('errors/404', { title: 'Halaman tidak ditemukan' });
-});
-
-app.use((err, req, res, next) => {
-  console.error('🔥 Error:', err);
-  res.status(500).render('errors/500', { title: 'Terjadi kesalahan', error: err });
-});
-
-// 404
+/* ---------- 404 (harus satu, sebelum error handler) ---------- */
 app.use((req, res) => {
   res.status(404);
-  try { return res.render('errors/404', { title: 'Halaman tidak ditemukan', url: req.originalUrl }); }
-  catch (e) { return res.type('text').send('404 Not Found'); }
+  try {
+    return res.render('errors/404', {
+      title: 'Halaman tidak ditemukan',
+      url: req.originalUrl
+    });
+  } catch (e) {
+    return res.type('text').send('404 Not Found');
+  }
 });
 
-// 500
+/* ---------- Error handler (harus satu, paling terakhir) ---------- */
 app.use((err, req, res, next) => {
   console.error('🔥 Error:', err);
   res.status(500);
@@ -94,7 +115,6 @@ app.use((err, req, res, next) => {
     return res.type('text').send('Internal Server Error');
   }
 });
-
 
 /* ---------- Start ---------- */
 const PORT = process.env.PORT || 3000;
