@@ -1,14 +1,8 @@
-// models/categoryModel.js
-const pool = require('./db');
+const db = require('./db');
 
 async function getAllCategories() {
-  try {
-    const [rows] = await pool.query('SELECT * FROM categories ORDER BY id DESC');
-    return rows;
-  } catch (err) {
-    console.error('getAllCategories error:', err.code || err.message);
-    return []; // fallback biar halaman tetap render
-  }
+  const [rows] = await db.query('SELECT * FROM categories');
+  return rows;
 }
 
 module.exports = { getAllCategories };
