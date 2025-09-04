@@ -1,10 +1,9 @@
-// app.js
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
 require('dotenv').config();
 
-// Routers
+
 const publicRoutes        = require('./routes/publicRoutes');
 const adminRoutes         = require('./routes/adminRoutes');
 const adminCategoryRoutes = require('./routes/adminCategoryRoutes');
